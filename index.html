@@ -2030,8 +2030,9 @@
                                 ctx.font = 'bold 14px Arial';
                                 ctx.fillStyle = '#ffffff';
                                 ctx.textAlign = 'center';
-                                ctx.textBaseline = 'bottom';
-                                ctx.fillText(text, bar.x, bar.y - 5);
+                                ctx.textBaseline = 'middle';
+                                // Position inside bar, near the top
+                                ctx.fillText(text, bar.x, bar.y + 15);
                                 ctx.restore();
                             });
                         });
@@ -2209,7 +2210,7 @@
                         
                         ctx.restore();
                         
-                        // Draw value labels on bars
+                        // Draw value labels INSIDE bars
                         chart.data.datasets.forEach((dataset, i) => {
                             const meta = chart.getDatasetMeta(i);
                             meta.data.forEach((bar, index) => {
@@ -2220,8 +2221,9 @@
                                 ctx.font = 'bold 14px Arial';
                                 ctx.fillStyle = '#ffffff';
                                 ctx.textAlign = 'center';
-                                ctx.textBaseline = 'bottom';
-                                ctx.fillText(text, bar.x, bar.y - 5);
+                                ctx.textBaseline = 'middle';
+                                // Position inside bar, near the top
+                                ctx.fillText(text, bar.x, bar.y + 15);
                                 ctx.restore();
                             });
                         });
@@ -2669,5 +2671,5 @@
         // Initialize application when DOM is loaded
         document.addEventListener('DOMContentLoaded', init);
     </script>
- <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9b04aa61a21d9cad',t:'MTc2NjEyMzg3OC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9b04bf1c167ca439',t:'MTc2NjEyNDcyOC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
