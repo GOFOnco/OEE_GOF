@@ -2003,16 +2003,48 @@
                 charts.oeePerMachine.destroy();
             }
             
-            charts.oeePerMachine = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: avgOEEPerMachine.map(([machine]) => machine),
-                    datasets: [{
-                        label: 'Average OEE %',
-                        data: avgOEEPerMachine.map(([, oee]) => oee),
-                        backgroundColor: 'rgba(102, 126, 234, 0.8)'
-                    }]
-                },
+// WARNA BAR: MERAH JIKA OEE <= 86%
+const oeeValues = avgOEEPerMachine.map(([, oee]) => oee);
+const barColors = oeeValues.map(oee =>
+    oee <= 86 ? '#ef4444' : '#22c55e'
+);
+
+charts.oeePerMachine = new Chart(ctx, {
+    type: 'bar',
+    data: {
+        labels: avgOEEPerMachine.map(([machine]) => machine),
+        datasets: [
+            {
+                label: 'Average OEE %',
+                data: oeeValues,
+                backgroundColor: barColors,
+                borderRadius: 8
+            },
+            {
+                label: 'Limit 86%',
+                data: Array(oeeValues.length).fill(86),
+                type: 'line',
+                borderColor: '#dc2626',
+                borderDash: [6, 6],
+                pointRadius: 0
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true,
+                max: 100,
+                ticks: {
+                    callback: v => v + '%'
+                }
+            }
+        }
+    }
+});
+
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
