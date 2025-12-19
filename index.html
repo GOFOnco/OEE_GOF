@@ -410,7 +410,7 @@
         </div>
        </div>
       </div>
-      <div class="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-4"><button type="button" id="submit-btn" onclick="submitOEEData()" class="btn-success text-white px-8 py-3 rounded-lg font-semibold"> 💾 Simpan Data OEE </button> <button type="button" onclick="resetForm()" class="bg-gray-500 text-white px-8 py-3 rounded-lg font-semibold hover:bg-gray-600 transition-all"> 🔄 Reset </button>
+      <div class="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-4"><button type="button" id="submit-btn" onclick="submitOEEData()" class="btn-success text-white px-8 py-3 rounded-lg font-semibold"> 💾 Simpan Data OEE </button> <button type="button" onclick="resetForm()" class="bg-gray-500 text-white px-8 py-3 rounded-lg font-semibold hover:bg-gray-600 transition-all"> ��� Reset </button>
       </div>
      </form>
     </div>
@@ -2158,16 +2158,6 @@
                         }
                     },
                     plugins: {
-                        datalabels: showLabels ? {
-                            anchor: 'end',
-                            align: 'end',
-                            formatter: (value) => `${value} min`,
-                            color: '#1f2937',
-                            font: {
-                                weight: 'bold',
-                                size: 11
-                            }
-                        } : false,
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
@@ -2185,11 +2175,12 @@
                             const meta = chart.getDatasetMeta(i);
                             meta.data.forEach((bar, index) => {
                                 const data = dataset.data[index];
-                                ctx.fillStyle = '#1f2937';
-                                ctx.font = 'bold 11px Arial';
-                                ctx.textAlign = 'left';
+                                ctx.fillStyle = '#ffffff';
+                                ctx.font = 'bold 12px Arial';
+                                ctx.textAlign = 'right';
                                 ctx.textBaseline = 'middle';
-                                ctx.fillText(`${data} min`, bar.x + 5, bar.y);
+                                // Draw label inside bar, 10px from right edge
+                                ctx.fillText(`${data} min`, bar.x - 10, bar.y);
                             });
                         });
                     }
@@ -2560,5 +2551,5 @@
         // Initialize application when DOM is loaded
         document.addEventListener('DOMContentLoaded', init);
     </script>
- <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9b04519bf1e0fd10',t:'MTc2NjEyMDI0Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9b04821a97f6d3c6',t:'MTc2NjEyMjIyOS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
