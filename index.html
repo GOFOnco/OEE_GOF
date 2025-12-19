@@ -3,7 +3,7 @@
  <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>OEE Manufacturing System v.02</title>
+  <title>OEE Manufacturing System v30</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -192,6 +192,30 @@
             padding: 1.5rem;
             box-shadow: 0 4px 20px rgba(253, 203, 110, 0.3);
         }
+        
+        /* Responsive styles */
+        @media (max-width: 768px) {
+            .section-header {
+                font-size: 1.75rem;
+            }
+            
+            .chart-container {
+                height: 250px;
+            }
+            
+            .nav-btn {
+                font-size: 0.875rem;
+                padding: 0.75rem 0.5rem;
+            }
+            
+            table {
+                font-size: 0.75rem;
+            }
+            
+            .metric-card {
+                padding: 1rem;
+            }
+        }
     </style>
   <style>@view-transition { navigation: auto; }</style>
   <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
@@ -200,22 +224,22 @@
  <body class="min-h-full">
   <div id="app" class="min-h-full pb-8"><!-- Header -->
    <header class="glass-card mb-6 animate-fade-in" style="border-radius: 0;">
-    <div class="max-w-7xl mx-auto px-6 py-8">
+    <div class="max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-8">
      <div class="flex items-center justify-between">
       <div>
-       <h1 id="system-title" class="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600">🏭 OEE Manufacturing System</h1>
-       <p id="company-name" class="text-gray-600 mt-2 text-lg">📊 by Eduardus Rian</p>
+       <h1 id="system-title" class="text-2xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600">🏭 OEE Manufacturing System v30</h1>
+       <p id="company-name" class="text-gray-600 mt-2 text-sm md:text-lg">📊 Manufacturing Company Excellence</p>
       </div>
      </div>
     </div>
    </header><!-- Navigation -->
-   <nav class="max-w-7xl mx-auto px-6 mb-8">
+   <nav class="max-w-7xl mx-auto px-4 md:px-6 mb-8">
     <div class="glass-card rounded-2xl p-2">
-     <div class="flex space-x-2"><button onclick="showSection('dashboard')" class="nav-btn flex-1 py-4 px-6 rounded-xl text-purple-700 font-semibold hover:bg-purple-50 transition-all active" data-section="dashboard"> 📊 Dashboard </button> <button onclick="showSection('input')" class="nav-btn flex-1 py-4 px-6 rounded-xl text-purple-700 font-semibold hover:bg-purple-50 transition-all" data-section="input"> ✍️ OEE Input </button> <button onclick="showSection('machines')" class="nav-btn flex-1 py-4 px-6 rounded-xl text-purple-700 font-semibold hover:bg-purple-50 transition-all" data-section="machines"> 🔧 Machine Management </button> <button onclick="showSection('export')" class="nav-btn flex-1 py-4 px-6 rounded-xl text-purple-700 font-semibold hover:bg-purple-50 transition-all" data-section="export"> 📥 Export </button>
+     <div class="flex flex-wrap md:flex-nowrap space-x-1 md:space-x-2"><button onclick="showSection('dashboard')" class="nav-btn flex-1 py-3 md:py-4 px-2 md:px-6 rounded-xl text-purple-700 font-semibold hover:bg-purple-50 transition-all active" data-section="dashboard"> 📊 Dashboard </button> <button onclick="showSection('input')" class="nav-btn flex-1 py-3 md:py-4 px-2 md:px-6 rounded-xl text-purple-700 font-semibold hover:bg-purple-50 transition-all" data-section="input"> ✍️ OEE Input </button> <button onclick="showSection('machines')" class="nav-btn flex-1 py-3 md:py-4 px-2 md:px-6 rounded-xl text-purple-700 font-semibold hover:bg-purple-50 transition-all" data-section="machines"> 🔧 Machine </button> <button onclick="showSection('export')" class="nav-btn flex-1 py-3 md:py-4 px-2 md:px-6 rounded-xl text-purple-700 font-semibold hover:bg-purple-50 transition-all" data-section="export"> 📥 Export </button>
      </div>
     </div>
    </nav><!-- Dashboard Section -->
-   <section id="dashboard-section" class="section max-w-7xl mx-auto px-6">
+   <section id="dashboard-section" class="section max-w-7xl mx-auto px-4 md:px-6">
     <div class="mb-6 animate-fade-in">
      <h2 class="section-header mb-6">📈 Dashboard Analytics</h2><!-- Filters -->
      <div class="filter-card mb-8">
@@ -294,18 +318,18 @@
        </div>
       </div>
      </div><!-- Operator Performance Table -->
-     <div class="chart-card mb-8">
+     <div class="chart-card mb-8 overflow-x-auto">
       <h3 class="text-lg font-semibold text-gray-700 mb-4">👥 Operator Performance</h3>
       <div class="overflow-x-auto">
        <table class="min-w-full table-auto">
         <thead>
          <tr>
-          <th class="px-4 py-3 text-left text-sm font-medium">PIC</th>
-          <th class="px-4 py-3 text-left text-sm font-medium">Avg OEE</th>
-          <th class="px-4 py-3 text-left text-sm font-medium">Target Output</th>
-          <th class="px-4 py-3 text-left text-sm font-medium">Actual Output</th>
-          <th class="px-4 py-3 text-left text-sm font-medium">Achievement %</th>
-          <th class="px-4 py-3 text-left text-sm font-medium">Records</th>
+          <th class="px-2 md:px-4 py-3 text-left text-xs md:text-sm font-medium">PIC</th>
+          <th class="px-2 md:px-4 py-3 text-left text-xs md:text-sm font-medium">Avg OEE</th>
+          <th class="px-2 md:px-4 py-3 text-left text-xs md:text-sm font-medium">Target Output</th>
+          <th class="px-2 md:px-4 py-3 text-left text-xs md:text-sm font-medium">Actual Output</th>
+          <th class="px-2 md:px-4 py-3 text-left text-xs md:text-sm font-medium">Achievement %</th>
+          <th class="px-2 md:px-4 py-3 text-left text-xs md:text-sm font-medium">Records</th>
          </tr>
         </thead>
         <tbody id="operator-performance-table">
@@ -313,7 +337,7 @@
        </table>
       </div>
      </div><!-- OEE History Table -->
-     <div class="chart-card">
+     <div class="chart-card overflow-x-auto">
       <h3 class="text-lg font-semibold text-gray-700 mb-4">📋 OEE History</h3>
       <div class="overflow-x-auto">
        <table class="min-w-full table-auto">
@@ -344,8 +368,8 @@
      </div>
     </div>
    </section><!-- OEE Input Section -->
-   <section id="input-section" class="section hidden max-w-4xl mx-auto px-6">
-    <div class="glass-card rounded-2xl p-8 animate-fade-in">
+   <section id="input-section" class="section hidden max-w-4xl mx-auto px-4 md:px-6">
+    <div class="glass-card rounded-2xl p-6 md:p-8 animate-fade-in">
      <h2 class="section-header mb-6">✍️ OEE Data Input</h2>
      <form id="oee-form" class="space-y-6"><!-- Basic Information -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -357,7 +381,7 @@
        </div>
        <div><label class="block text-sm font-medium text-gray-700 mb-2">👤 PIC</label> <input type="text" id="input-pic" required class="w-full input-field rounded-lg px-4 py-2">
        </div>
-       <div><label class="block text-sm font-medium text-gray-700 mb-2">💊 Product</label> <input type="text" id="input-product" required class="w-full input-field rounded-lg px-4 py-2">
+       <div><label class="block text-sm font-medium text-gray-700 mb-2">📦 Product</label> <input type="text" id="input-product" required class="w-full input-field rounded-lg px-4 py-2">
        </div>
        <div><label class="block text-sm font-medium text-gray-700 mb-2">🏷️ Batch</label> <input type="text" id="input-batch" required class="w-full input-field rounded-lg px-4 py-2">
        </div>
@@ -386,19 +410,19 @@
         </div>
        </div>
       </div>
-      <div class="flex space-x-4"><button type="button" id="submit-btn" onclick="submitOEEData()" class="btn-success text-white px-8 py-3 rounded-lg font-semibold"> 💾 Simpan Data OEE </button> <button type="button" onclick="resetForm()" class="bg-gray-500 text-white px-8 py-3 rounded-lg font-semibold hover:bg-gray-600 transition-all"> 🔄 Reset </button>
+      <div class="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-4"><button type="button" id="submit-btn" onclick="submitOEEData()" class="btn-success text-white px-8 py-3 rounded-lg font-semibold"> 💾 Simpan Data OEE </button> <button type="button" onclick="resetForm()" class="bg-gray-500 text-white px-8 py-3 rounded-lg font-semibold hover:bg-gray-600 transition-all"> 🔄 Reset </button>
       </div>
      </form>
     </div>
    </section><!-- Machine Management Section -->
-   <section id="machines-section" class="section hidden max-w-6xl mx-auto px-6">
-    <div class="glass-card rounded-2xl p-8 animate-fade-in">
-     <div class="flex justify-between items-center mb-6">
-      <h2 class="section-header">🔧 Machine Management</h2><button onclick="showMachineForm()" class="btn-success text-white px-6 py-3 rounded-lg font-semibold"> ➕ Add Machine </button>
+   <section id="machines-section" class="section hidden max-w-6xl mx-auto px-4 md:px-6">
+    <div class="glass-card rounded-2xl p-6 md:p-8 animate-fade-in">
+     <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 space-y-4 md:space-y-0">
+      <h2 class="section-header">🔧 Machine Management</h2><button onclick="showMachineForm()" class="btn-success text-white px-6 py-3 rounded-lg font-semibold w-full md:w-auto"> ➕ Add Machine </button>
      </div><!-- Password Protection -->
      <div id="password-protection" class="mb-6">
       <div class="password-card"><label class="block text-sm font-medium text-gray-800 mb-2">🔒 Enter Admin Password</label>
-       <div class="flex space-x-2"><input type="password" id="admin-password" placeholder="Enter password" class="flex-1 input-field rounded-lg px-4 py-2 bg-white"> <button onclick="checkPassword()" class="btn-primary text-white px-6 py-2 rounded-lg font-semibold"> 🔓 Access </button>
+       <div class="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-2"><input type="password" id="admin-password" placeholder="Enter password" class="flex-1 input-field rounded-lg px-4 py-2 bg-white"> <button onclick="checkPassword()" class="btn-primary text-white px-6 py-2 rounded-lg font-semibold"> 🔓 Access </button>
        </div>
       </div>
      </div><!-- Machine Form -->
@@ -416,7 +440,7 @@
        </div><!-- ODT Items -->
        <div class="chart-card"><label class="block text-sm font-medium text-gray-700 mb-4">⏱️ ODT Items</label>
         <div id="odt-items" class="space-y-2">
-         <div class="flex space-x-2"><input type="text" placeholder="ODT Name" class="flex-1 input-field rounded-lg px-4 py-2 odt-name"> <input type="number" placeholder="Standard Time (min)" class="w-32 input-field rounded-lg px-4 py-2 odt-time"> <button type="button" onclick="removeODTItem(this)" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-all">Remove</button>
+         <div class="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-2"><input type="text" placeholder="ODT Name" class="flex-1 input-field rounded-lg px-4 py-2 odt-name"> <input type="number" placeholder="Standard Time (min)" class="w-full md:w-32 input-field rounded-lg px-4 py-2 odt-time"> <button type="button" onclick="removeODTItem(this)" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-all">Remove</button>
          </div>
         </div><button type="button" onclick="addODTItem()" class="mt-3 btn-success text-white px-4 py-2 rounded-lg font-semibold"> ➕ Add ODT Item </button>
        </div><!-- Line Stop Categories -->
@@ -434,7 +458,7 @@
         <div id="minor-stop-items" class="space-y-2"><input type="text" placeholder="Minor Stop Item" class="w-full input-field rounded-lg px-4 py-2 minor-stop-item">
         </div><button type="button" onclick="addMinorStopItem()" class="mt-3 btn-success text-white px-4 py-2 rounded-lg font-semibold"> ➕ Add Item </button>
        </div>
-       <div class="flex space-x-4"><button type="submit" id="machine-submit-btn" class="btn-primary text-white px-8 py-3 rounded-lg font-semibold"> 💾 Save Machine </button> <button type="button" onclick="cancelMachineForm()" class="bg-gray-500 text-white px-8 py-3 rounded-lg font-semibold hover:bg-gray-600 transition-all"> ❌ Cancel </button>
+       <div class="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-4"><button type="submit" id="machine-submit-btn" class="btn-primary text-white px-8 py-3 rounded-lg font-semibold"> 💾 Save Machine </button> <button type="button" onclick="cancelMachineForm()" class="bg-gray-500 text-white px-8 py-3 rounded-lg font-semibold hover:bg-gray-600 transition-all"> ❌ Cancel </button>
        </div>
       </form>
      </div><!-- Machine List -->
@@ -443,11 +467,11 @@
        <table class="min-w-full table-auto">
         <thead>
          <tr>
-          <th class="px-4 py-3 text-left text-sm font-medium">Name</th>
-          <th class="px-4 py-3 text-left text-sm font-medium">Area</th>
-          <th class="px-4 py-3 text-left text-sm font-medium">Target/Min</th>
-          <th class="px-4 py-3 text-left text-sm font-medium">PIC</th>
-          <th class="px-4 py-3 text-left text-sm font-medium">Actions</th>
+          <th class="px-2 md:px-4 py-3 text-left text-xs md:text-sm font-medium">Name</th>
+          <th class="px-2 md:px-4 py-3 text-left text-xs md:text-sm font-medium">Area</th>
+          <th class="px-2 md:px-4 py-3 text-left text-xs md:text-sm font-medium">Target/Min</th>
+          <th class="px-2 md:px-4 py-3 text-left text-xs md:text-sm font-medium">PIC</th>
+          <th class="px-2 md:px-4 py-3 text-left text-xs md:text-sm font-medium">Actions</th>
          </tr>
         </thead>
         <tbody id="machine-list">
@@ -457,8 +481,8 @@
      </div>
     </div>
    </section><!-- Export Section -->
-   <section id="export-section" class="section hidden max-w-4xl mx-auto px-6">
-    <div class="glass-card rounded-2xl p-8 animate-fade-in">
+   <section id="export-section" class="section hidden max-w-4xl mx-auto px-4 md:px-6">
+    <div class="glass-card rounded-2xl p-6 md:p-8 animate-fade-in">
      <h2 class="section-header mb-6">📥 Export Data</h2><!-- Export Filters -->
      <div class="filter-card mb-6">
       <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -472,10 +496,10 @@
        </div>
       </div>
      </div>
-     <div class="flex space-x-4"><button onclick="exportData()" id="export-btn" class="btn-success text-white px-8 py-3 rounded-lg font-semibold"> 📥 Export Data </button> <button onclick="previewExport()" class="btn-primary text-white px-8 py-3 rounded-lg font-semibold"> 👁️ Preview </button>
+     <div class="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-4"><button onclick="exportData()" id="export-btn" class="btn-success text-white px-8 py-3 rounded-lg font-semibold"> 📥 Export Data </button> <button onclick="previewExport()" class="btn-primary text-white px-8 py-3 rounded-lg font-semibold"> 👁️ Preview </button>
      </div><!-- Export Preview -->
      <div id="export-preview" class="mt-6 hidden">
-      <h3 class="text-lg font-semibold text-gray-700 mb-4">  ️ Export Preview</h3>
+      <h3 class="text-lg font-semibold text-gray-700 mb-4">👁️ Export Preview</h3>
       <div class="chart-card">
        <p id="preview-info" class="text-sm text-gray-600 mb-4"></p>
        <div class="overflow-x-auto max-h-96">
@@ -500,7 +524,9 @@
         let isAuthenticated = false;
         let supabaseClient = null;
         let inactivityTimer = null;
-        const INACTIVITY_TIMEOUT = 10000; // 10 seconds
+        const INACTIVITY_TIMEOUT = 20000; // 20 seconds
+        let dashboardRefreshInterval = null;
+        const DASHBOARD_REFRESH_INTERVAL = 900000; // 15 minutes
 
         // Supabase Configuration
         const SUPABASE_URL = 'https://ehespstzpubqkovkykby.supabase.co';
@@ -559,6 +585,28 @@
             
             // Update operator filter dropdown
             updateOperatorFilter();
+            
+            // Start dashboard auto-refresh
+            startDashboardAutoRefresh();
+        }
+
+        // Start dashboard auto-refresh
+        function startDashboardAutoRefresh() {
+            // Clear existing interval if any
+            if (dashboardRefreshInterval) {
+                clearInterval(dashboardRefreshInterval);
+            }
+            
+            // Set new interval for 15 minutes
+            dashboardRefreshInterval = setInterval(async () => {
+                // Only refresh if dashboard section is visible
+                const dashboardSection = document.getElementById('dashboard-section');
+                if (!dashboardSection.classList.contains('hidden')) {
+                    await loadDataFromSupabase();
+                    updateDashboard();
+                    showToast('Dashboard refreshed automatically', 'info');
+                }
+            }, DASHBOARD_REFRESH_INTERVAL);
         }
 
         // Load data from Supabase
@@ -732,7 +780,7 @@
         // Password protection
         function checkPassword() {
             const password = document.getElementById('admin-password').value;
-            if (password === 'cimenG90') {
+            if (password === 'admin123') {
                 isAuthenticated = true;
                 document.getElementById('password-protection').classList.add('hidden');
                 document.getElementById('machine-list-container').classList.remove('hidden');
@@ -805,9 +853,9 @@
             // Reset ODT items
             const odtContainer = document.getElementById('odt-items');
             odtContainer.innerHTML = `
-                <div class="flex space-x-2">
+                <div class="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-2">
                     <input type="text" placeholder="ODT Name" class="flex-1 input-field rounded-lg px-4 py-2 odt-name">
-                    <input type="number" placeholder="Standard Time (min)" class="w-32 input-field rounded-lg px-4 py-2 odt-time">
+                    <input type="number" placeholder="Standard Time (min)" class="w-full md:w-32 input-field rounded-lg px-4 py-2 odt-time">
                     <button type="button" onclick="removeODTItem(this)" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-all">Remove</button>
                 </div>
             `;
@@ -829,10 +877,10 @@
         function addODTItem() {
             const container = document.getElementById('odt-items');
             const div = document.createElement('div');
-            div.className = 'flex space-x-2';
+            div.className = 'flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-2';
             div.innerHTML = `
                 <input type="text" placeholder="ODT Name" class="flex-1 input-field rounded-lg px-4 py-2 odt-name">
-                <input type="number" placeholder="Standard Time (min)" class="w-32 input-field rounded-lg px-4 py-2 odt-time">
+                <input type="number" placeholder="Standard Time (min)" class="w-full md:w-32 input-field rounded-lg px-4 py-2 odt-time">
                 <button type="button" onclick="removeODTItem(this)" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-all">Remove</button>
             `;
             container.appendChild(div);
@@ -981,10 +1029,10 @@
             odtContainer.innerHTML = '';
             odtItems.forEach(item => {
                 const div = document.createElement('div');
-                div.className = 'flex space-x-2';
+                div.className = 'flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-2';
                 div.innerHTML = `
                     <input type="text" value="${item.name}" class="flex-1 input-field rounded-lg px-4 py-2 odt-name">
-                    <input type="number" value="${item.standardTime}" class="w-32 input-field rounded-lg px-4 py-2 odt-time">
+                    <input type="number" value="${item.standardTime}" class="w-full md:w-32 input-field rounded-lg px-4 py-2 odt-time">
                     <button type="button" onclick="removeODTItem(this)" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-all">Remove</button>
                 `;
                 odtContainer.appendChild(div);
@@ -1074,13 +1122,13 @@
                 const row = document.createElement('tr');
                 row.className = 'border-b';
                 row.innerHTML = `
-                    <td class="px-4 py-3">${machine.name}</td>
-                    <td class="px-4 py-3">${machine.area}</td>
-                    <td class="px-4 py-3">${machine.target_per_minute}</td>
-                    <td class="px-4 py-3">${machine.pic}</td>
-                    <td class="px-4 py-3">
-                        <button onclick="editMachine('${machine.id}')" class="bg-blue-500 text-white px-3 py-1 rounded-lg text-sm hover:bg-blue-600 transition-all mr-2">✏️ Edit</button>
-                        <button onclick="deleteMachine('${machine.id}')" class="bg-red-500 text-white px-3 py-1 rounded-lg text-sm hover:bg-red-600 transition-all">🗑️ Delete</button>
+                    <td class="px-2 md:px-4 py-3">${machine.name}</td>
+                    <td class="px-2 md:px-4 py-3">${machine.area}</td>
+                    <td class="px-2 md:px-4 py-3">${machine.target_per_minute}</td>
+                    <td class="px-2 md:px-4 py-3">${machine.pic}</td>
+                    <td class="px-2 md:px-4 py-3">
+                        <button onclick="editMachine('${machine.id}')" class="bg-blue-500 text-white px-2 md:px-3 py-1 rounded-lg text-xs md:text-sm hover:bg-blue-600 transition-all mr-2">✏️ Edit</button>
+                        <button onclick="deleteMachine('${machine.id}')" class="bg-red-500 text-white px-2 md:px-3 py-1 rounded-lg text-xs md:text-sm hover:bg-red-600 transition-all">🗑️ Delete</button>
                     </td>
                 `;
                 tbody.appendChild(row);
@@ -1217,7 +1265,7 @@
                 const lineStopSection = document.createElement('div');
                 lineStopSection.className = 'chart-card';
                 lineStopSection.innerHTML = `
-                    <h3 class="text-lg font-semibold text-gray-700 mb-4">     Line Stop</h3>
+                    <h3 class="text-lg font-semibold text-gray-700 mb-4">🔴 Line Stop</h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <h4 class="font-medium text-gray-600 mb-3">🔴 Line Stop Mesin</h4>
@@ -1229,7 +1277,7 @@
                                     <label class="block text-sm font-medium text-gray-700 mb-2">⚠️ Custom Line Stop Mesin 1</label>
                                     <input type="text" id="customLSMesinName1" class="w-full input-field rounded-lg px-3 py-2 mb-2 uppercase" 
                                            placeholder="Nama Problem (opsional)" style="text-transform: uppercase;">
-                                    <div class="grid grid-cols-3 gap-2">
+                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
                                         <input type="number" id="customLSMesinTime1" class="input-field rounded-lg px-3 py-2" 
                                                placeholder="Durasi (menit)" onchange="calculateOEE(); calculateTargetRecommendation(); checkCustomWRRequirement('customLSMesinTime1', 'customLSMesinWR1');">
                                         <input type="text" id="customLSMesinAction1" class="input-field rounded-lg px-3 py-2 uppercase" 
@@ -1243,7 +1291,7 @@
                                     <label class="block text-sm font-medium text-gray-700 mb-2">⚠️ Custom Line Stop Mesin 2</label>
                                     <input type="text" id="customLSMesinName2" class="w-full input-field rounded-lg px-3 py-2 mb-2 uppercase" 
                                            placeholder="Nama Problem (opsional)" style="text-transform: uppercase;">
-                                    <div class="grid grid-cols-3 gap-2">
+                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
                                         <input type="number" id="customLSMesinTime2" class="input-field rounded-lg px-3 py-2" 
                                                placeholder="Durasi (menit)" onchange="calculateOEE(); calculateTargetRecommendation(); checkCustomWRRequirement('customLSMesinTime2', 'customLSMesinWR2');">
                                         <input type="text" id="customLSMesinAction2" class="input-field rounded-lg px-3 py-2 uppercase" 
@@ -1264,7 +1312,7 @@
                                     <label class="block text-sm font-medium text-gray-700 mb-2">⚠️ Custom Line Stop Non Mesin 1</label>
                                     <input type="text" id="customLSNonMesinName1" class="w-full input-field rounded-lg px-3 py-2 mb-2 uppercase" 
                                            placeholder="Nama Problem (opsional)" style="text-transform: uppercase;">
-                                    <div class="grid grid-cols-2 gap-2">
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
                                         <input type="number" id="customLSNonMesinTime1" class="input-field rounded-lg px-3 py-2" 
                                                placeholder="Durasi (menit)" onchange="calculateOEE(); calculateTargetRecommendation();">
                                         <input type="text" id="customLSNonMesinAction1" class="input-field rounded-lg px-3 py-2 uppercase" 
@@ -1276,7 +1324,7 @@
                                     <label class="block text-sm font-medium text-gray-700 mb-2">⚠️ Custom Line Stop Non Mesin 2</label>
                                     <input type="text" id="customLSNonMesinName2" class="w-full input-field rounded-lg px-3 py-2 mb-2 uppercase" 
                                            placeholder="Nama Problem (opsional)" style="text-transform: uppercase;">
-                                    <div class="grid grid-cols-2 gap-2">
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
                                         <input type="number" id="customLSNonMesinTime2" class="input-field rounded-lg px-3 py-2" 
                                                placeholder="Durasi (menit)" onchange="calculateOEE(); calculateTargetRecommendation();">
                                         <input type="text" id="customLSNonMesinAction2" class="input-field rounded-lg px-3 py-2 uppercase" 
@@ -1298,7 +1346,7 @@
                     div.className = 'mb-2 p-3 bg-red-50 rounded-lg border-2 border-red-200';
                     div.innerHTML = `
                         <label class="block text-sm font-medium text-gray-700 mb-2">${item}</label>
-                        <div class="grid grid-cols-3 gap-2">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
                             <input type="number" class="input-field rounded-lg px-3 py-2 line-stop-mesin-input" 
                                    data-name="${item}" onchange="checkWRRequirement(); calculateOEE(); calculateTargetRecommendation();" placeholder="Durasi (menit)">
                             <input type="text" class="input-field rounded-lg px-3 py-2 line-stop-mesin-action uppercase" 
@@ -1316,7 +1364,7 @@
                     div.className = 'mb-2 p-3 bg-yellow-50 rounded-lg border-2 border-yellow-200';
                     div.innerHTML = `
                         <label class="block text-sm font-medium text-gray-700 mb-2">${item}</label>
-                        <div class="grid grid-cols-2 gap-2">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
                             <input type="number" class="input-field rounded-lg px-3 py-2 line-stop-non-mesin-input" 
                                    data-name="${item}" onchange="calculateOEE(); calculateTargetRecommendation();" placeholder="Durasi (menit)">
                             <input type="text" class="input-field rounded-lg px-3 py-2 line-stop-non-mesin-action uppercase" 
@@ -1408,7 +1456,7 @@
                             <label class="block text-sm font-medium text-orange-700 mb-2">
                                 🔔 ${overtimeName} (Auto-calculated)
                             </label>
-                            <div class="grid grid-cols-2 gap-2">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
                                 <input type="number" value="${overtime}" 
                                        class="input-field rounded-lg px-3 py-2 bg-orange-50" 
                                        disabled readonly>
@@ -1536,6 +1584,13 @@
                     throw new Error('Silakan pilih mesin');
                 }
                 
+                // Check if OEE is 0%
+                const oeeValue = parseFloat(document.getElementById('calc-oee').textContent);
+                if (oeeValue === 0) {
+                    showToast('OEE 0% tidak bisa disimpan. Periksa kembali data Anda.', 'error');
+                    return;
+                }
+                
                 // Check WR requirement for line stop mesin > 179 minutes
                 let wrValidationFailed = false;
                 document.querySelectorAll('.line-stop-mesin-input').forEach(input => {
@@ -1640,22 +1695,21 @@
                 }
                 
                 // Check if OEE > 100%
-                const oeeValue = parseFloat(document.getElementById('calc-oee').textContent);
                 if (oeeValue > 100) {
                     showToast('OEE tidak boleh melebihi 100%. Silakan periksa nilai input Anda.', 'error');
                     return;
                 }
                 
-                // Collect all form data
+                // Collect all form data (convert to uppercase)
                 const formData = {
                     id: generateId(),
                     type: 'oee_record',
                     date: document.getElementById('input-date').value,
-                    shift: document.getElementById('input-shift').value,
-                    machine: machineName,
-                    pic: document.getElementById('input-pic').value,
-                    product: document.getElementById('input-product').value,
-                    batch: document.getElementById('input-batch').value,
+                    shift: document.getElementById('input-shift').value.toUpperCase(),
+                    machine: machineName.toUpperCase(),
+                    pic: document.getElementById('input-pic').value.toUpperCase(),
+                    product: document.getElementById('input-product').value.toUpperCase(),
+                    batch: document.getElementById('input-batch').value.toUpperCase(),
                     actual_output: parseInt(document.getElementById('input-actual-output').value),
                     reject: parseInt(document.getElementById('input-reject').value)
                 };
@@ -1663,7 +1717,7 @@
                 // Collect ODT actual times
                 const odtActualTimes = {};
                 document.querySelectorAll('.odt-checkbox').forEach(checkbox => {
-                    const name = checkbox.dataset.name;
+                    const name = checkbox.dataset.name.toUpperCase();
                     const standard = parseInt(checkbox.dataset.standard);
                     
                     if (checkbox.checked) {
@@ -1676,72 +1730,72 @@
                 });
                 formData.odt_actual_times = JSON.stringify(odtActualTimes);
                 
-                // Collect Line Stop durations with actions and WR numbers (including custom)
+                // Collect Line Stop durations with actions and WR numbers (including custom) - UPPERCASE
                 const lineStopDurations = { mesin: {}, nonMesin: {} };
                 const lineStopActions = { mesin: {}, nonMesin: {} };
                 const lineStopWRNumbers = {};
                 
                 document.querySelectorAll('.line-stop-mesin-input').forEach(input => {
-                    const name = input.dataset.name;
+                    const name = input.dataset.name.toUpperCase();
                     const duration = parseInt(input.value) || 0;
                     const actionInput = input.parentElement.querySelector('.line-stop-mesin-action');
                     const wrInput = input.parentElement.querySelector('.line-stop-mesin-wr');
                     
                     lineStopDurations.mesin[name] = duration;
-                    lineStopActions.mesin[name] = actionInput.value || '';
+                    lineStopActions.mesin[name] = actionInput.value.toUpperCase() || '';
                     if (wrInput.value) {
-                        lineStopWRNumbers[name] = wrInput.value;
+                        lineStopWRNumbers[name] = wrInput.value.toUpperCase();
                     }
                 });
                 
                 // Add custom line stop mesin
                 if (customMesin1Time > 0) {
-                    lineStopDurations.mesin[customMesin1Name] = customMesin1Time;
-                    lineStopActions.mesin[customMesin1Name] = document.getElementById('customLSMesinAction1')?.value || '';
+                    lineStopDurations.mesin[customMesin1Name.toUpperCase()] = customMesin1Time;
+                    lineStopActions.mesin[customMesin1Name.toUpperCase()] = document.getElementById('customLSMesinAction1')?.value.toUpperCase() || '';
                     if (customMesin1WR) {
-                        lineStopWRNumbers[customMesin1Name] = customMesin1WR;
+                        lineStopWRNumbers[customMesin1Name.toUpperCase()] = customMesin1WR.toUpperCase();
                     }
                 }
                 
                 if (customMesin2Time > 0) {
-                    lineStopDurations.mesin[customMesin2Name] = customMesin2Time;
-                    lineStopActions.mesin[customMesin2Name] = document.getElementById('customLSMesinAction2')?.value || '';
+                    lineStopDurations.mesin[customMesin2Name.toUpperCase()] = customMesin2Time;
+                    lineStopActions.mesin[customMesin2Name.toUpperCase()] = document.getElementById('customLSMesinAction2')?.value.toUpperCase() || '';
                     if (customMesin2WR) {
-                        lineStopWRNumbers[customMesin2Name] = customMesin2WR;
+                        lineStopWRNumbers[customMesin2Name.toUpperCase()] = customMesin2WR.toUpperCase();
                     }
                 }
                 
                 document.querySelectorAll('.line-stop-non-mesin-input').forEach(input => {
-                    const name = input.dataset.name;
+                    const name = input.dataset.name.toUpperCase();
                     const duration = parseInt(input.value) || 0;
                     const actionInput = input.parentElement.querySelector('.line-stop-non-mesin-action');
                     
                     lineStopDurations.nonMesin[name] = duration;
-                    lineStopActions.nonMesin[name] = actionInput.value || '';
+                    lineStopActions.nonMesin[name] = actionInput.value.toUpperCase() || '';
                 });
                 
                 // Add custom line stop non mesin
                 if (customNonMesin1Time > 0) {
-                    lineStopDurations.nonMesin[customNonMesin1Name] = customNonMesin1Time;
-                    lineStopActions.nonMesin[customNonMesin1Name] = document.getElementById('customLSNonMesinAction1')?.value || '';
+                    lineStopDurations.nonMesin[customNonMesin1Name.toUpperCase()] = customNonMesin1Time;
+                    lineStopActions.nonMesin[customNonMesin1Name.toUpperCase()] = document.getElementById('customLSNonMesinAction1')?.value.toUpperCase() || '';
                 }
                 
                 if (customNonMesin2Time > 0) {
-                    lineStopDurations.nonMesin[customNonMesin2Name] = customNonMesin2Time;
-                    lineStopActions.nonMesin[customNonMesin2Name] = document.getElementById('customLSNonMesinAction2')?.value || '';
+                    lineStopDurations.nonMesin[customNonMesin2Name.toUpperCase()] = customNonMesin2Time;
+                    lineStopActions.nonMesin[customNonMesin2Name.toUpperCase()] = document.getElementById('customLSNonMesinAction2')?.value.toUpperCase() || '';
                 }
                 
                 // Add ODT overtimes to Line Stop Non Mesin
                 document.querySelectorAll('.odt-checkbox').forEach(checkbox => {
                     if (checkbox.checked) {
-                        const name = checkbox.dataset.name;
+                        const name = checkbox.dataset.name.toUpperCase();
                         const standard = parseInt(checkbox.dataset.standard);
                         const actualInput = checkbox.parentElement.querySelector('.odt-actual');
                         const actual = parseInt(actualInput.value) || standard;
                         
                         if (actual > standard) {
                             const overtime = actual - standard;
-                            const overtimeName = `${name} Overtime`;
+                            const overtimeName = `${name} OVERTIME`;
                             lineStopDurations.nonMesin[overtimeName] = overtime;
                             lineStopActions.nonMesin[overtimeName] = 'ODT MELEBIHI STANDARD';
                         }
@@ -1755,7 +1809,7 @@
                 // Collect Minor Stop frequencies
                 const minorStopFrequencies = {};
                 document.querySelectorAll('.minor-stop-input').forEach(input => {
-                    minorStopFrequencies[input.dataset.name] = parseInt(input.value) || 0;
+                    minorStopFrequencies[input.dataset.name.toUpperCase()] = parseInt(input.value) || 0;
                 });
                 formData.minor_stop_frequencies = JSON.stringify(minorStopFrequencies);
                 
@@ -1855,6 +1909,10 @@
                 charts.oeeTrend.destroy();
             }
             
+            // Create color array based on OEE values
+            const colors = records.map(r => r.oee <= 86 ? '#ef4444' : '#8b5cf6');
+            const pointBackgroundColors = records.map(r => r.oee <= 86 ? '#ef4444' : '#8b5cf6');
+            
             charts.oeeTrend = new Chart(ctx, {
                 type: 'line',
                 data: {
@@ -1864,8 +1922,18 @@
                         data: records.map(r => r.oee),
                         borderColor: '#8b5cf6',
                         backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                        pointBackgroundColor: pointBackgroundColors,
+                        pointBorderColor: pointBackgroundColors,
+                        pointRadius: 5,
+                        pointHoverRadius: 7,
                         tension: 0.4,
-                        fill: true
+                        fill: true,
+                        segment: {
+                            borderColor: ctx => {
+                                const dataIndex = ctx.p0DataIndex;
+                                return records[dataIndex] && records[dataIndex].oee <= 86 ? '#ef4444' : '#8b5cf6';
+                            }
+                        }
                     }]
                 },
                 options: {
@@ -1875,6 +1943,15 @@
                         y: {
                             beginAtZero: true,
                             max: 100
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `OEE: ${context.parsed.y.toFixed(1)}% ${context.parsed.y <= 86 ? '(Below Target)' : ''}`;
+                                }
+                            }
                         }
                     }
                 }
@@ -1892,6 +1969,11 @@
             const avgP = records.length > 0 ? records.reduce((sum, r) => sum + r.performance, 0) / records.length : 0;
             const avgQ = records.length > 0 ? records.reduce((sum, r) => sum + r.quality, 0) / records.length : 0;
             
+            // Determine colors based on thresholds
+            const colorA = avgA < 93 ? 'rgba(239, 68, 68, 0.8)' : 'rgba(16, 185, 129, 0.8)';
+            const colorP = avgP < 98 ? 'rgba(239, 68, 68, 0.8)' : 'rgba(16, 185, 129, 0.8)';
+            const colorQ = avgQ < 99 ? 'rgba(239, 68, 68, 0.8)' : 'rgba(139, 92, 246, 0.8)';
+            
             charts.apq = new Chart(ctx, {
                 type: 'bar',
                 data: {
@@ -1899,11 +1981,7 @@
                     datasets: [{
                         label: 'Average %',
                         data: [avgA, avgP, avgQ],
-                        backgroundColor: [
-                            'rgba(239, 68, 68, 0.8)',
-                            'rgba(16, 185, 129, 0.8)',
-                            'rgba(139, 92, 246, 0.8)'
-                        ]
+                        backgroundColor: [colorA, colorP, colorQ]
                     }]
                 },
                 options: {
@@ -1913,6 +1991,19 @@
                         y: {
                             beginAtZero: true,
                             max: 100
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const thresholds = { 'Availability': 93, 'Performance': 98, 'Quality': 99 };
+                                    const threshold = thresholds[context.label];
+                                    const value = context.parsed.y;
+                                    const status = value < threshold ? `(Below ${threshold}%)` : `(Above ${threshold}%)`;
+                                    return `${context.label}: ${value.toFixed(1)}% ${status}`;
+                                }
+                            }
                         }
                     }
                 }
@@ -1939,7 +2030,7 @@
                 .slice(0, 10);
             
             updateHorizontalBarChart('line-stop-mesin-chart', 'lineStopMesin', 
-                'Line Stop Mesin (Minutes)', topLineStopMesin, 'rgba(239, 68, 68, 0.8)');
+                'Line Stop Mesin (Minutes)', topLineStopMesin, 'rgba(239, 68, 68, 0.8)', true);
             
             // Line Stop Non Mesin Chart
             const lineStopNonMesinData = {};
@@ -1960,7 +2051,7 @@
                 .slice(0, 10);
             
             updateHorizontalBarChart('line-stop-non-mesin-chart', 'lineStopNonMesin', 
-                'Line Stop Non Mesin (Minutes)', topLineStopNonMesin, 'rgba(251, 191, 36, 0.8)');
+                'Line Stop Non Mesin (Minutes)', topLineStopNonMesin, 'rgba(251, 191, 36, 0.8)', true);
         }
 
         function updateODTChart(records) {
@@ -1980,7 +2071,7 @@
                 .slice(0, 10);
             
             updateHorizontalBarChart('odt-chart', 'odt', 
-                'ODT Time (Minutes)', topODT, 'rgba(139, 92, 246, 0.8)');
+                'ODT Time (Minutes)', topODT, 'rgba(139, 92, 246, 0.8)', true);
         }
 
         function updateOEEPerMachineChart(records) {
@@ -2003,6 +2094,11 @@
                 charts.oeePerMachine.destroy();
             }
             
+            // Create color array based on OEE values
+            const colors = avgOEEPerMachine.map(([, oee]) => 
+                oee <= 86 ? 'rgba(239, 68, 68, 0.8)' : 'rgba(102, 126, 234, 0.8)'
+            );
+            
             charts.oeePerMachine = new Chart(ctx, {
                 type: 'bar',
                 data: {
@@ -2010,7 +2106,7 @@
                     datasets: [{
                         label: 'Average OEE %',
                         data: avgOEEPerMachine.map(([, oee]) => oee),
-                        backgroundColor: 'rgba(102, 126, 234, 0.8)'
+                        backgroundColor: colors
                     }]
                 },
                 options: {
@@ -2021,12 +2117,21 @@
                             beginAtZero: true,
                             max: 100
                         }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `OEE: ${context.parsed.y.toFixed(1)}% ${context.parsed.y <= 86 ? '(Below Target)' : ''}`;
+                                }
+                            }
+                        }
                     }
                 }
             });
         }
 
-        function updateHorizontalBarChart(canvasId, chartKey, label, data, color) {
+        function updateHorizontalBarChart(canvasId, chartKey, label, data, color, showLabels = false) {
             const ctx = document.getElementById(canvasId).getContext('2d');
             
             if (charts[chartKey]) {
@@ -2051,21 +2156,69 @@
                         x: {
                             beginAtZero: true
                         }
+                    },
+                    plugins: {
+                        datalabels: showLabels ? {
+                            anchor: 'end',
+                            align: 'end',
+                            formatter: (value) => `${value} min`,
+                            color: '#1f2937',
+                            font: {
+                                weight: 'bold',
+                                size: 11
+                            }
+                        } : false,
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.parsed.x} minutes`;
+                                }
+                            }
+                        }
                     }
-                }
+                },
+                plugins: showLabels ? [{
+                    id: 'customLabels',
+                    afterDatasetsDraw: function(chart) {
+                        const ctx = chart.ctx;
+                        chart.data.datasets.forEach((dataset, i) => {
+                            const meta = chart.getDatasetMeta(i);
+                            meta.data.forEach((bar, index) => {
+                                const data = dataset.data[index];
+                                ctx.fillStyle = '#1f2937';
+                                ctx.font = 'bold 11px Arial';
+                                ctx.textAlign = 'left';
+                                ctx.textBaseline = 'middle';
+                                ctx.fillText(`${data} min`, bar.x + 5, bar.y);
+                            });
+                        });
+                    }
+                }] : []
             });
         }
 
         // Helper function to get shift minutes
         function getShiftMinutes(shift) {
             const shiftMap = {
-                'shift1': 510,
-                'shift2': 450,
-                'shift3': 510,
-                'longshift_pagi': 720,
-                'longshift_malam': 720
+                'SHIFT1': 510,
+                'SHIFT2': 450,
+                'SHIFT3': 510,
+                'LONGSHIFT_PAGI': 720,
+                'LONGSHIFT_MALAM': 720
             };
-            return shiftMap[shift] || 480;
+            return shiftMap[shift.toUpperCase()] || 480;
+        }
+
+        // Helper function to get shift order
+        function getShiftOrder(shift) {
+            const shiftOrder = {
+                'SHIFT1': 1,
+                'SHIFT2': 2,
+                'SHIFT3': 3,
+                'LONGSHIFT_PAGI': 4,
+                'LONGSHIFT_MALAM': 5
+            };
+            return shiftOrder[shift.toUpperCase()] || 99;
         }
 
         function updateOperatorPerformance() {
@@ -2112,7 +2265,14 @@
             const tbody = document.getElementById('operator-performance-table');
             tbody.innerHTML = '';
             
-            Object.entries(operatorData).forEach(([pic, data]) => {
+            // Sort by achievement (highest first)
+            const sortedOperators = Object.entries(operatorData).sort((a, b) => {
+                const achievementA = a[1].totalTarget > 0 ? (a[1].totalOutput / a[1].totalTarget) * 100 : 0;
+                const achievementB = b[1].totalTarget > 0 ? (b[1].totalOutput / b[1].totalTarget) * 100 : 0;
+                return achievementB - achievementA;
+            });
+            
+            sortedOperators.forEach(([pic, data]) => {
                 const avgOEE = data.totalOEE / data.records;
                 const achievement = data.totalTarget > 0 ? (data.totalOutput / data.totalTarget) * 100 : 0;
                 // Cap achievement at 100%
@@ -2121,14 +2281,14 @@
                 const row = document.createElement('tr');
                 row.className = 'border-b';
                 row.innerHTML = `
-                    <td class="px-4 py-3">${pic}</td>
-                    <td class="px-4 py-3">${avgOEE.toFixed(1)}%</td>
-                    <td class="px-4 py-3">${Math.round(data.totalTarget).toLocaleString()}</td>
-                    <td class="px-4 py-3">${data.totalOutput.toLocaleString()}</td>
-                    <td class="px-4 py-3 font-bold ${cappedAchievement >= 100 ? 'text-green-600' : 'text-red-600'}">
+                    <td class="px-2 md:px-4 py-3">${pic}</td>
+                    <td class="px-2 md:px-4 py-3">${avgOEE.toFixed(1)}%</td>
+                    <td class="px-2 md:px-4 py-3">${Math.round(data.totalTarget).toLocaleString()}</td>
+                    <td class="px-2 md:px-4 py-3">${data.totalOutput.toLocaleString()}</td>
+                    <td class="px-2 md:px-4 py-3 font-bold ${cappedAchievement >= 100 ? 'text-green-600' : 'text-red-600'}">
                         ${cappedAchievement.toFixed(1)}%
                     </td>
-                    <td class="px-4 py-3">${data.records}</td>
+                    <td class="px-2 md:px-4 py-3">${data.records}</td>
                 `;
                 tbody.appendChild(row);
             });
@@ -2139,11 +2299,18 @@
             const tbody = document.getElementById('dashboard-history-table');
             tbody.innerHTML = '';
             
-            filteredRecords.forEach(record => {
+            // Sort by date (ascending) then by shift order (ascending)
+            const sortedRecords = [...filteredRecords].sort((a, b) => {
+                const dateCompare = a.date.localeCompare(b.date);
+                if (dateCompare !== 0) return dateCompare;
+                return getShiftOrder(a.shift) - getShiftOrder(b.shift);
+            });
+            
+            sortedRecords.forEach(record => {
                 const row = document.createElement('tr');
                 row.className = `border-b ${record.oee < 86 ? 'pulse-red' : ''}`;
                 
-                // Parse complex data for display
+                // Parse complex data for display (all UPPERCASE)
                 const odtTimes = JSON.parse(record.odt_actual_times || '{}');
                 const lineStopDurations = JSON.parse(record.line_stop_durations || '{}');
                 const minorStopFreqs = JSON.parse(record.minor_stop_frequencies || '{}');
@@ -2152,34 +2319,34 @@
                 // Filter out items with zero or empty values
                 const odtDisplay = Object.entries(odtTimes)
                     .filter(([k,v]) => v > 0)
-                    .map(([k,v]) => `${k}:${v}min`)
+                    .map(([k,v]) => `${k.toUpperCase()}:${v}MIN`)
                     .join(', ') || '-';
                     
                 const lineStopDisplay = [
                     ...Object.entries(lineStopDurations.mesin || {})
                         .filter(([k,v]) => v > 0)
-                        .map(([k,v]) => `M-${k}:${v}min`),
+                        .map(([k,v]) => `M-${k.toUpperCase()}:${v}MIN`),
                     ...Object.entries(lineStopDurations.nonMesin || {})
                         .filter(([k,v]) => v > 0)
-                        .map(([k,v]) => `NM-${k}:${v}min`)
+                        .map(([k,v]) => `NM-${k.toUpperCase()}:${v}MIN`)
                 ].join(', ') || '-';
                 
                 const minorStopDisplay = Object.entries(minorStopFreqs)
                     .filter(([k,v]) => v > 0)
-                    .map(([k,v]) => `${k}:${v}x`)
+                    .map(([k,v]) => `${k.toUpperCase()}:${v}X`)
                     .join(', ') || '-';
                 
                 const wrDisplay = Object.entries(wrNumbers)
-                    .map(([k,v]) => `${k}:${v}`)
+                    .map(([k,v]) => `${k.toUpperCase()}:${v.toUpperCase()}`)
                     .join(', ') || '-';
                 
                 row.innerHTML = `
                     <td class="px-2 py-2 text-xs">${record.date}</td>
-                    <td class="px-2 py-2 text-xs">${record.shift}</td>
-                    <td class="px-2 py-2 text-xs">${record.machine}</td>
-                    <td class="px-2 py-2 text-xs">${record.pic}</td>
-                    <td class="px-2 py-2 text-xs">${record.product}</td>
-                    <td class="px-2 py-2 text-xs">${record.batch}</td>
+                    <td class="px-2 py-2 text-xs">${record.shift.toUpperCase()}</td>
+                    <td class="px-2 py-2 text-xs">${record.machine.toUpperCase()}</td>
+                    <td class="px-2 py-2 text-xs">${record.pic.toUpperCase()}</td>
+                    <td class="px-2 py-2 text-xs">${record.product.toUpperCase()}</td>
+                    <td class="px-2 py-2 text-xs">${record.batch.toUpperCase()}</td>
                     <td class="px-2 py-2 text-xs">${record.actual_output}</td>
                     <td class="px-2 py-2 text-xs">${record.reject}</td>
                     <td class="px-2 py-2 text-xs">${record.availability.toFixed(1)}%</td>
@@ -2226,10 +2393,10 @@
                 row.className = 'border-b';
                 row.innerHTML = `
                     <td class="px-2 py-2 text-xs">${record.date}</td>
-                    <td class="px-2 py-2 text-xs">${record.shift}</td>
-                    <td class="px-2 py-2 text-xs">${record.machine}</td>
-                    <td class="px-2 py-2 text-xs">${record.pic}</td>
-                    <td class="px-2 py-2 text-xs">${record.product}</td>
+                    <td class="px-2 py-2 text-xs">${record.shift.toUpperCase()}</td>
+                    <td class="px-2 py-2 text-xs">${record.machine.toUpperCase()}</td>
+                    <td class="px-2 py-2 text-xs">${record.pic.toUpperCase()}</td>
+                    <td class="px-2 py-2 text-xs">${record.product.toUpperCase()}</td>
                     <td class="px-2 py-2 text-xs">${record.oee.toFixed(1)}%</td>
                 `;
                 body.appendChild(row);
@@ -2279,11 +2446,11 @@
                 headers.join(','),
                 ...records.map(record => [
                     record.date,
-                    record.shift,
-                    record.machine,
-                    record.pic,
-                    record.product,
-                    record.batch,
+                    record.shift.toUpperCase(),
+                    record.machine.toUpperCase(),
+                    record.pic.toUpperCase(),
+                    record.product.toUpperCase(),
+                    record.batch.toUpperCase(),
                     record.actual_output,
                     record.reject,
                     record.availability.toFixed(1),
@@ -2314,11 +2481,11 @@
                     ${records.map(record => `
                         <tr style="${record.oee < 86 ? 'background-color: #fecaca;' : ''}">
                             <td>${record.date}</td>
-                            <td>${record.shift}</td>
-                            <td>${record.machine}</td>
-                            <td>${record.pic}</td>
-                            <td>${record.product}</td>
-                            <td>${record.batch}</td>
+                            <td>${record.shift.toUpperCase()}</td>
+                            <td>${record.machine.toUpperCase()}</td>
+                            <td>${record.pic.toUpperCase()}</td>
+                            <td>${record.product.toUpperCase()}</td>
+                            <td>${record.batch.toUpperCase()}</td>
                             <td>${record.actual_output}</td>
                             <td>${record.reject}</td>
                             <td>${record.availability.toFixed(1)}</td>
@@ -2393,5 +2560,5 @@
         // Initialize application when DOM is loaded
         document.addEventListener('DOMContentLoaded', init);
     </script>
- <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9a04989662986d44',t:'MTc2MzQzODc5NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9b04519bf1e0fd10',t:'MTc2NjEyMDI0Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
