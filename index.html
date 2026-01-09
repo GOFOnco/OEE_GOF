@@ -1919,8 +1919,8 @@
             }
             
             // Create color array based on OEE values
-            const colors = records.map(r => r.oee <= 86 ? '#ef4444' : '#8b5cf6');
-            const pointBackgroundColors = records.map(r => r.oee <= 86 ? '#ef4444' : '#8b5cf6');
+            const colors = records.map(r => r.oee <= 88 ? '#ef4444' : '#8b5cf6');
+            const pointBackgroundColors = records.map(r => r.oee <= 88 ? '#ef4444' : '#8b5cf6');
             
             charts.oeeTrend = new Chart(ctx, {
                 type: 'line',
@@ -1940,7 +1940,7 @@
                         segment: {
                             borderColor: ctx => {
                                 const dataIndex = ctx.p0DataIndex;
-                                return records[dataIndex] && records[dataIndex].oee <= 86 ? '#ef4444' : '#8b5cf6';
+                                return records[dataIndex] && records[dataIndex].oee <= 88 ? '#ef4444' : '#8b5cf6';
                             }
                         }
                     }]
@@ -1958,7 +1958,7 @@
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
-                                    return `OEE: ${context.parsed.y.toFixed(1)}% ${context.parsed.y <= 86 ? '(Below Target)' : ''}`;
+                                    return `OEE: ${context.parsed.y.toFixed(1)}% ${context.parsed.y <= 88 ? '(Below Target)' : ''}`;
                                 }
                             }
                         }
@@ -2147,7 +2147,7 @@
             
             // Create color array based on OEE values
             const colors = avgOEEPerMachine.map(([, oee]) => 
-                oee <= 86 ? 'rgba(239, 68, 68, 0.8)' : 'rgba(102, 126, 234, 0.8)'
+                oee <= 88 ? 'rgba(239, 68, 68, 0.8)' : 'rgba(102, 126, 234, 0.8)'
             );
             
             charts.oeePerMachine = new Chart(ctx, {
@@ -2173,7 +2173,7 @@
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
-                                    return `OEE: ${context.parsed.y.toFixed(1)}% ${context.parsed.y <= 86 ? '(Below Target)' : ''}`;
+                                    return `OEE: ${context.parsed.y.toFixed(1)}% ${context.parsed.y <= 88 ? '(Below Target)' : ''}`;
                                 }
                             }
                         }
@@ -2186,8 +2186,8 @@
                         const chartArea = chart.chartArea;
                         const yScale = chart.scales.y;
                         
-                        // Draw target line at 86%
-                        const yPosition = yScale.getPixelForValue(86);
+                        // Draw target line at 88%
+                        const yPosition = yScale.getPixelForValue(88);
                         
                         ctx.save();
                         ctx.strokeStyle = 'rgba(255, 99, 132, 0.8)';
@@ -2206,7 +2206,7 @@
                         ctx.fillStyle = '#ffffff';
                         ctx.textAlign = 'center';
                         ctx.textBaseline = 'middle';
-                        ctx.fillText('Target 86%', chartArea.right - 50, yPosition);
+                        ctx.fillText('Target 88%', chartArea.right - 50, yPosition);
                         
                         ctx.restore();
                         
@@ -2419,7 +2419,7 @@
             
             sortedRecords.forEach(record => {
                 const row = document.createElement('tr');
-                row.className = `border-b ${record.oee < 86 ? 'pulse-red' : ''}`;
+                row.className = `border-b ${record.oee < 88 ? 'pulse-red' : ''}`;
                 
                 // Parse complex data for display (all UPPERCASE)
                 const odtTimes = JSON.parse(record.odt_actual_times || '{}');
@@ -2463,7 +2463,7 @@
                     <td class="px-2 py-2 text-xs">${record.availability.toFixed(1)}%</td>
                     <td class="px-2 py-2 text-xs">${record.performance.toFixed(1)}%</td>
                     <td class="px-2 py-2 text-xs">${record.quality.toFixed(1)}%</td>
-                    <td class="px-2 py-2 text-xs font-bold ${record.oee < 86 ? 'text-red-600' : 'text-green-600'}">${record.oee.toFixed(1)}%</td>
+                    <td class="px-2 py-2 text-xs font-bold ${record.oee < 88 ? 'text-red-600' : 'text-green-600'}">${record.oee.toFixed(1)}%</td>
                     <td class="px-2 py-2 text-xs" title="${wrDisplay}">${wrDisplay.length > 20 ? wrDisplay.substring(0, 20) + '...' : wrDisplay}</td>
                     <td class="px-2 py-2 text-xs" title="${odtDisplay}">${odtDisplay.length > 20 ? odtDisplay.substring(0, 20) + '...' : odtDisplay}</td>
                     <td class="px-2 py-2 text-xs" title="${lineStopDisplay}">${lineStopDisplay.length > 20 ? lineStopDisplay.substring(0, 20) + '...' : lineStopDisplay}</td>
@@ -2590,7 +2590,7 @@
                 <table>
                     <tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr>
                     ${records.map(record => `
-                        <tr style="${record.oee < 86 ? 'background-color: #fecaca;' : ''}">
+                        <tr style="${record.oee < 88 ? 'background-color: #fecaca;' : ''}">
                             <td>${record.date}</td>
                             <td>${record.shift.toUpperCase()}</td>
                             <td>${record.machine.toUpperCase()}</td>
