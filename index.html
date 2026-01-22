@@ -922,11 +922,11 @@
             const date = new Date();
             const currentDay = date.getDate();
             
-            if (currentDay < 26) {
+            if (currentDay < 01) {
                 date.setMonth(date.getMonth() - 1);
-                date.setDate(26);
+                date.setDate(01);
             } else {
-                date.setDate(26);
+                date.setDate(01);
             }
             
             return date.toISOString().split('T')[0];
@@ -936,7 +936,7 @@
             const date = new Date();
             const currentDay = date.getDate();
             
-            if (currentDay < 26) {
+            if (currentDay < 01) {
                 date.setDate(31);
             } else {
                 date.setMonth(date.getMonth);
