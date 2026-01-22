@@ -919,20 +919,29 @@
         // UTILITY FUNCTIONS
         // =============================================
         function getCurrentPeriodStart() {
-    const date = new Date();
-    // Awal periode selalu tanggal 1 bulan ini
-    date.setDate(1);
-    return date.toISOString().split('T')[0];
-}
-
-function getCurrentPeriodEnd() {
-    const date = new Date();
-    // Akhir periode = hari terakhir bulan ini
-    // Trik: set tanggal ke 0 dari bulan berikutnya → hasilnya akhir bulan ini
-    date.setMonth(date.getMonth() + 1);
-    date.setDate(0);
-    return date.toISOString().split('T')[0];
-}
+            const date = new Date();
+            const currentDay = date.getDate();
+            
+            if (currentDay < 26) {
+                date.setMonth(date.getMonth() - 1);
+                date.setDate(26);
+            } else {
+                date.setDate(26);
+            }
+            
+            return date.toISOString().split('T')[0];
+        }
+        
+        function getCurrentPeriodEnd() {
+            const date = new Date();
+            const currentDay = date.getDate();
+            
+            if (currentDay < 26) {
+                date.setDate(25);
+            } else {
+                date.setMonth(date.getMonth() + 1);
+                date.setDate(25);
+            }
             
             return date.toISOString().split('T')[0];
         }
