@@ -937,10 +937,10 @@
             const currentDay = date.getDate();
             
             if (currentDay < 01) {
-                date.setDate(31);
+                date.setDate(30);
             } else {
                 date.setMonth(date.getMonth() + 1);
-                date.setDate(31);
+                date.setDate(30);
             }
             
             return date.toISOString().split('T')[0];
