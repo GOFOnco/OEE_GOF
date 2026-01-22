@@ -137,7 +137,7 @@
         
         .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 16px rgba(102, 131, 234, 0.3);
+            box-shadow: 0 8px 16px rgba(102, 125, 234, 0.3);
         }
         
         .btn-secondary {
@@ -156,7 +156,7 @@
         }
         
         .btn-danger:hover {
-            background: #dc3131;
+            background: #dc2525;
         }
         
         .input-field {
@@ -171,7 +171,7 @@
         .input-field:focus {
             outline: none;
             border-color: var(--accent-primary);
-            box-shadow: 0 0 0 3px rgba(102, 131, 234, 0.1);
+            box-shadow: 0 0 0 3px rgba(102, 125, 234, 0.1);
         }
         
         .label {
@@ -225,7 +225,7 @@
         
         .nav-tab {
             padding: 14px 28px;
-            background: linear-gradient(135deg, rgba(102, 131, 234, 0.1), rgba(118, 75, 162, 0.1));
+            background: linear-gradient(135deg, rgba(102, 125, 234, 0.1), rgba(118, 75, 162, 0.1));
             border: 2px solid transparent;
             border-radius: 12px;
             font-weight: 700;
@@ -237,16 +237,16 @@
         }
         
         .nav-tab:hover {
-            background: linear-gradient(135deg, rgba(102, 131, 234, 0.2), rgba(118, 75, 162, 0.2));
+            background: linear-gradient(135deg, rgba(102, 125, 234, 0.2), rgba(118, 75, 162, 0.2));
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(102, 131, 234, 0.3);
+            box-shadow: 0 4px 12px rgba(102, 125, 234, 0.3);
         }
         
         .nav-tab.active {
             background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
             color: white;
             border-color: var(--accent-primary);
-            box-shadow: 0 6px 20px rgba(102, 131, 234, 0.4);
+            box-shadow: 0 6px 20px rgba(102, 125, 234, 0.4);
             transform: translateY(-2px);
         }
         
@@ -334,7 +334,7 @@
         }
         
         .spinner {
-            border: 3px solid rgba(102, 131, 234, 0.3);
+            border: 3px solid rgba(102, 125, 234, 0.3);
             border-radius: 50%;
             border-top-color: var(--accent-primary);
             width: 40px;
@@ -379,7 +379,7 @@
         }
         
         .checkbox-item.active {
-            background: rgba(102, 131, 234, 0.1);
+            background: rgba(102, 125, 234, 0.1);
             border-color: var(--accent-primary);
         }
         
@@ -442,17 +442,17 @@
         
         .grid-3 {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(310px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 20px;
         }
 
         .target-box {
-            background: linear-gradient(135deg, rgba(102, 131, 234, 0.15), rgba(118, 75, 162, 0.15));
+            background: linear-gradient(135deg, rgba(102, 125, 234, 0.15), rgba(118, 75, 162, 0.15));
             padding: 20px;
             border-radius: 12px;
             margin-bottom: 24px;
             border: 2px solid var(--accent-primary);
-            box-shadow: 0 4px 12px rgba(102, 131, 234, 0.2);
+            box-shadow: 0 4px 12px rgba(102, 125, 234, 0.2);
         }
         
         .odt-exceed-warning {
@@ -530,7 +530,7 @@
             }
             
             .chart-container {
-                height: 310px;
+                height: 250px;
             }
             
             table {
@@ -919,29 +919,20 @@
         // UTILITY FUNCTIONS
         // =============================================
         function getCurrentPeriodStart() {
-            const date = new Date();
-            const currentDay = date.getDate();
-            
-            if (currentDay < 01) {
-                date.setMonth(date.getMonth() - 1);
-                date.setDate(01);
-            } else {
-                date.setDate(01);
-            }
-            
-            return date.toISOString().split('T')[0];
-        }
-        
-        function getCurrentPeriodEnd() {
-            const date = new Date();
-            const currentDay = date.getDate();
-            
-            if (currentDay < 01) {
-                date.setDate(30);
-            } else {
-                date.setMonth(date.getMonth() + 1);
-                date.setDate(30);
-            }
+    const date = new Date();
+    // Awal periode selalu tanggal 1 bulan ini
+    date.setDate(1);
+    return date.toISOString().split('T')[0];
+}
+
+function getCurrentPeriodEnd() {
+    const date = new Date();
+    // Akhir periode = hari terakhir bulan ini
+    // Trik: set tanggal ke 0 dari bulan berikutnya → hasilnya akhir bulan ini
+    date.setMonth(date.getMonth() + 1);
+    date.setDate(0);
+    return date.toISOString().split('T')[0];
+}
             
             return date.toISOString().split('T')[0];
         }
@@ -1332,11 +1323,11 @@
                         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
                             <div>
                                 <h1 style="color: white; font-size: 28px; font-weight: 900; margin-bottom: 4px;">${config.system_title}</h1>
-                                <p style="color: rgba(315,315,315,0.9); font-size: 14px;">${config.company_name}</p>
+                                <p style="color: rgba(255,255,255,0.9); font-size: 14px;">${config.company_name}</p>
                             </div>
                             <div style="text-align: right;">
                                 <p style="color: white; font-size: 14px; font-weight: 600;">${new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} - ${new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</p>
-                                <p style="color: rgba(315,315,315,0.8); font-size: 12px;">✅ Connected</p>
+                                <p style="color: rgba(255,255,255,0.8); font-size: 12px;">✅ Connected</p>
                             </div>
                         </div>
                     </div>
@@ -1672,7 +1663,7 @@
                 }
                 
                 const wrDisplay = wrNumbers.length > 0 
-                    ? `<div style="max-width: 310px;">${wrNumbers.map(wr => `<div style="font-size: 11px; padding: 2px 0; border-bottom: 1px solid var(--border);">${wr}</div>`).join('')}</div>`
+                    ? `<div style="max-width: 250px;">${wrNumbers.map(wr => `<div style="font-size: 11px; padding: 2px 0; border-bottom: 1px solid var(--border);">${wr}</div>`).join('')}</div>`
                     : '-';
                 
                 return `
@@ -1716,7 +1707,7 @@
                         <div class="card-header">✏️ Input OEE Data</div>
                         
                         <!-- Basic Info -->
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(310px, 1fr)); gap: 16px; margin-bottom: 24px;">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-bottom: 24px;">
                             <div>
                                 <label class="label">Tanggal *</label>
                                 <input type="date" id="input-date" value="${new Date().toISOString().split('T')[0]}" class="input-field">
@@ -1786,7 +1777,7 @@
                         </div>
                         
                         <!-- Output -->
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(310px, 1fr)); gap: 16px; margin-bottom: 24px;">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-bottom: 24px;">
                             <div>
                                 <label class="label">Actual Output *</label>
                                 <input type="number" id="input-output" min="0" class="input-field" oninput="updateCalculations()">
@@ -2001,7 +1992,7 @@
                             label: 'OEE Actual',
                             data,
                             borderColor: '#667eea',
-                            backgroundColor: 'rgba(102, 131, 234, 0.1)',
+                            backgroundColor: 'rgba(102, 125, 234, 0.1)',
                             tension: 0.4,
                             fill: true,
                             pointBackgroundColor: pointColors,
@@ -2560,7 +2551,7 @@
             if (!container) return;
             
             const html = `
-                <div id="custom-lsm-${customLSMCounter}" style="background: rgba(102, 131, 234, 0.1); padding: 12px; border-radius: 8px; margin-top: 12px; border: 2px solid var(--accent-primary);">
+                <div id="custom-lsm-${customLSMCounter}" style="background: rgba(102, 125, 234, 0.1); padding: 12px; border-radius: 8px; margin-top: 12px; border: 2px solid var(--accent-primary);">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                         <strong style="color: var(--accent-primary);">Custom Line Stop Mesin #${customLSMCounter}</strong>
                         <button type="button" class="btn btn-danger" style="padding: 4px 8px; font-size: 12px;" onclick="removeCustomLSM(${customLSMCounter})">Remove</button>
@@ -3629,8 +3620,8 @@
                     head: [['Date', 'Shift', 'Machine', 'PIC', 'Product', 'Batch', 'Output', 'Reject', 'A%', 'P%', 'Q%', 'OEE Act', 'OEE 365']],
                     body: tableData,
                     styles: { fontSize: 7, cellPadding: 2 },
-                    headStyles: { fillColor: [102, 131, 234], fontStyle: 'bold' },
-                    alternateRowStyles: { fillColor: [245, 247, 310] },
+                    headStyles: { fillColor: [102, 125, 234], fontStyle: 'bold' },
+                    alternateRowStyles: { fillColor: [245, 247, 250] },
                     margin: { left: 14, right: 14 },
                     didDrawPage: function (data) {
                         doc.setFontSize(8);
