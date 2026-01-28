@@ -410,6 +410,13 @@
             margin-top: 16px;
         }
         
+        .chart-container-horizontal {
+            position: relative;
+            height: 400px; /* Tambah tinggi untuk grafik horizontal */
+            margin-top: 16px;
+            padding-right: 60px; /* Ruang untuk label */
+        }
+        
         .status-good {
             color: var(--success);
             font-weight: 600;
@@ -539,6 +546,11 @@
                 height: 280px;
             }
             
+            .chart-container-horizontal {
+                height: 350px;
+                padding-right: 50px;
+            }
+            
             .scorecard-value {
                 font-size: 32px;
             }
@@ -596,6 +608,11 @@
             
             .chart-container {
                 height: 250px;
+            }
+            
+            .chart-container-horizontal {
+                height: 320px;
+                padding-right: 40px;
             }
             
             table {
@@ -670,6 +687,15 @@
                 width: 100%;
             }
             
+            .chart-container {
+                height: 240px;
+            }
+            
+            .chart-container-horizontal {
+                height: 300px;
+                padding-right: 30px;
+            }
+            
             table {
                 min-width: 1200px;
                 font-size: 12px;
@@ -685,10 +711,6 @@
                 margin: 8px;
                 max-height: 85vh;
                 max-width: calc(100vw - 16px);
-            }
-            
-            .chart-container {
-                height: 240px;
             }
             
             .toast {
@@ -772,6 +794,15 @@
                 width: 100%;
             }
             
+            .chart-container {
+                height: 220px;
+            }
+            
+            .chart-container-horizontal {
+                height: 280px;
+                padding-right: 25px;
+            }
+            
             table {
                 min-width: 1200px;
                 font-size: 11px;
@@ -797,10 +828,6 @@
                 max-height: 90vh;
                 max-width: calc(100vw - 16px);
                 border-radius: 12px;
-            }
-            
-            .chart-container {
-                height: 220px;
             }
             
             .toast {
@@ -883,6 +910,15 @@
                 font-size: 13px;
             }
             
+            .chart-container {
+                height: 200px;
+            }
+            
+            .chart-container-horizontal {
+                height: 250px;
+                padding-right: 20px;
+            }
+            
             table {
                 min-width: 1200px;
                 font-size: 10px;
@@ -895,10 +931,6 @@
             .input-field {
                 font-size: 13px;
                 padding: 8px 10px;
-            }
-            
-            .chart-container {
-                height: 200px;
             }
             
             .theme-toggle {
@@ -1547,7 +1579,7 @@
                         </div>
                         <div class="card">
                             <div class="card-header">⏱️ ODT Top 10</div>
-                            <div class="chart-container">
+                            <div class="chart-container-horizontal">
                                 <canvas id="chart-odt"></canvas>
                             </div>
                         </div>
@@ -1557,13 +1589,13 @@
                     <div class="grid-2">
                         <div class="card">
                             <div class="card-header">🔧 Line Stop Mesin Top 10</div>
-                            <div class="chart-container">
+                            <div class="chart-container-horizontal">
                                 <canvas id="chart-ls-mesin"></canvas>
                             </div>
                         </div>
                         <div class="card">
                             <div class="card-header">⚠️ Line Stop Non Mesin Top 10</div>
-                            <div class="chart-container">
+                            <div class="chart-container-horizontal">
                                 <canvas id="chart-ls-non-mesin"></canvas>
                             </div>
                         </div>
@@ -1572,7 +1604,7 @@
                     <!-- Minor Stop Chart -->
                     <div class="card">
                         <div class="card-header">⏸️ Minor Stop Top 10</div>
-                        <div class="chart-container">
+                        <div class="chart-container-horizontal">
                             <canvas id="chart-minor-stop"></canvas>
                         </div>
                     </div>
@@ -2021,7 +2053,7 @@
         }
 
         // =============================================
-        // CHART RENDERING
+        // CHART RENDERING - DENGAN LABEL PADA SETIAP BAR
         // =============================================
         function renderCharts() {
             const filtered = getFilteredRecords();
@@ -2036,7 +2068,7 @@
             });
             chartInstances = {};
             
-            // Render all charts
+            // Render all charts with labels
             renderTrendChart(filtered);
             renderPerMachineChart(filtered);
             renderAPQChart(filtered);
@@ -2172,9 +2204,55 @@
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        plugins: { legend: { display: true } },
+                        plugins: { 
+                            legend: { display: true },
+                            datalabels: {
+                                anchor: 'center',
+                                align: 'center',
+                                color: '#ffffff',
+                                font: {
+                                    weight: 'bold',
+                                    size: 11
+                                },
+                                formatter: function(value) {
+                                    return value.toFixed(1) + '%';
+                                }
+                            }
+                        },
                         scales: { y: { beginAtZero: true, max: 100 } }
-                    }
+                    },
+                    plugins: [{
+                        id: 'datalabels',
+                        afterDatasetsDraw: function(chart) {
+                            const { ctx, data, chartArea: { top, bottom, left, right, width, height } } = chart;
+                            ctx.save();
+                            
+                            data.datasets[0].data.forEach((value, index) => {
+                                const meta = chart.getDatasetMeta(0);
+                                const bar = meta.data[index];
+                                
+                                if (bar) {
+                                    const x = bar.x;
+                                    const y = bar.y;
+                                    const barWidth = bar.width;
+                                    const barHeight = bar.height;
+                                    
+                                    // Hitung posisi tengah bar
+                                    const centerX = x;
+                                    const centerY = y + (barHeight / 2);
+                                    
+                                    // Tampilkan label di tengah bar
+                                    ctx.fillStyle = '#ffffff';
+                                    ctx.font = 'bold 11px Arial';
+                                    ctx.textAlign = 'center';
+                                    ctx.textBaseline = 'middle';
+                                    ctx.fillText(value.toFixed(1) + '%', centerX, centerY);
+                                }
+                            });
+                            
+                            ctx.restore();
+                        }
+                    }]
                 });
             } catch (e) {
                 console.error('Error rendering per machine chart:', e);
@@ -2209,9 +2287,60 @@
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        plugins: { legend: { display: false } },
-                        scales: { y: { beginAtZero: true, max: 100 } }
-                    }
+                        plugins: { 
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return `${context.dataset.label}: ${context.raw.toFixed(1)}%`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: { 
+                            y: { 
+                                beginAtZero: true, 
+                                max: 100,
+                                ticks: {
+                                    callback: function(value) {
+                                        return value + '%';
+                                    }
+                                }
+                            } 
+                        }
+                    },
+                    plugins: [{
+                        id: 'datalabels',
+                        afterDatasetsDraw: function(chart) {
+                            const { ctx, data, chartArea: { top, bottom, left, right, width, height } } = chart;
+                            ctx.save();
+                            
+                            data.datasets[0].data.forEach((value, index) => {
+                                const meta = chart.getDatasetMeta(0);
+                                const bar = meta.data[index];
+                                
+                                if (bar) {
+                                    const x = bar.x;
+                                    const y = bar.y;
+                                    const barWidth = bar.width;
+                                    const barHeight = bar.height;
+                                    
+                                    // Hitung posisi tengah bar
+                                    const centerX = x;
+                                    const centerY = y + (barHeight / 2);
+                                    
+                                    // Tampilkan label di tengah bar
+                                    ctx.fillStyle = '#ffffff';
+                                    ctx.font = 'bold 12px Arial';
+                                    ctx.textAlign = 'center';
+                                    ctx.textBaseline = 'middle';
+                                    ctx.fillText(value.toFixed(1) + '%', centerX, centerY);
+                                }
+                            });
+                            
+                            ctx.restore();
+                        }
+                    }]
                 });
             } catch (e) {
                 console.error('Error rendering APQ chart:', e);
@@ -2250,13 +2379,19 @@
                 
                 if (sorted.length === 0) return;
                 
+                const labels = sorted.map(s => {
+                    const name = s[0];
+                    return name.length > 25 ? name.substring(0, 22) + '...' : name;
+                });
+                const values = sorted.map(s => s[1]);
+                
                 chartInstances.odt = new Chart(ctx, {
                     type: 'bar',
                     data: {
-                        labels: sorted.map(s => s[0]),
+                        labels,
                         datasets: [{
                             label: 'Total Minutes',
-                            data: sorted.map(s => s[1]),
+                            data: values,
                             backgroundColor: '#f59e0b'
                         }]
                     },
@@ -2264,8 +2399,83 @@
                         responsive: true,
                         maintainAspectRatio: false,
                         indexAxis: 'y',
-                        plugins: { legend: { display: false } }
-                    }
+                        plugins: { 
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    title: function(tooltipItems) {
+                                        const index = tooltipItems[0].dataIndex;
+                                        return sorted[index][0];
+                                    },
+                                    label: function(context) {
+                                        return `Duration: ${context.raw.toFixed(1)} minutes`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(value) {
+                                        return value + ' min';
+                                    }
+                                }
+                            },
+                            y: {
+                                ticks: {
+                                    font: {
+                                        size: 11
+                                    },
+                                    autoSkip: false,
+                                    maxRotation: 0
+                                },
+                                afterFit: function(scale) {
+                                    scale.width = 180; // Lebar untuk label y-axis
+                                }
+                            }
+                        },
+                        layout: {
+                            padding: {
+                                left: 10,
+                                right: 60, // Ruang untuk label value
+                                top: 10,
+                                bottom: 10
+                            }
+                        }
+                    },
+                    plugins: [{
+                        id: 'datalabels',
+                        afterDatasetsDraw: function(chart) {
+                            const { ctx, data, chartArea: { top, bottom, left, right, width, height } } = chart;
+                            ctx.save();
+                            
+                            data.datasets[0].data.forEach((value, index) => {
+                                const meta = chart.getDatasetMeta(0);
+                                const bar = meta.data[index];
+                                
+                                if (bar) {
+                                    const x = bar.x;
+                                    const y = bar.y;
+                                    const barWidth = bar.width;
+                                    const barHeight = bar.height;
+                                    
+                                    // Hitung posisi di sebelah kanan bar (horizontal chart)
+                                    const labelX = x + 5; // 5px dari ujung kanan bar
+                                    const labelY = y;
+                                    
+                                    // Tampilkan label di sebelah kanan bar
+                                    ctx.fillStyle = '#333333';
+                                    ctx.font = 'bold 11px Arial';
+                                    ctx.textAlign = 'left';
+                                    ctx.textBaseline = 'middle';
+                                    ctx.fillText(value.toFixed(0) + ' min', labelX, labelY);
+                                }
+                            });
+                            
+                            ctx.restore();
+                        }
+                    }]
                 });
             } catch (e) {
                 console.error('Error rendering ODT chart:', e);
@@ -2300,13 +2510,19 @@
                 
                 if (sorted.length === 0) return;
                 
+                const labels = sorted.map(s => {
+                    const name = s[0];
+                    return name.length > 25 ? name.substring(0, 22) + '...' : name;
+                });
+                const values = sorted.map(s => s[1]);
+                
                 chartInstances.lsMesin = new Chart(ctx, {
                     type: 'bar',
                     data: {
-                        labels: sorted.map(s => s[0]),
+                        labels,
                         datasets: [{
                             label: 'Total Minutes',
-                            data: sorted.map(s => s[1]),
+                            data: values,
                             backgroundColor: '#ef4444'
                         }]
                     },
@@ -2314,8 +2530,83 @@
                         responsive: true,
                         maintainAspectRatio: false,
                         indexAxis: 'y',
-                        plugins: { legend: { display: false } }
-                    }
+                        plugins: { 
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    title: function(tooltipItems) {
+                                        const index = tooltipItems[0].dataIndex;
+                                        return sorted[index][0];
+                                    },
+                                    label: function(context) {
+                                        return `Duration: ${context.raw.toFixed(1)} minutes`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(value) {
+                                        return value + ' min';
+                                    }
+                                }
+                            },
+                            y: {
+                                ticks: {
+                                    font: {
+                                        size: 11
+                                    },
+                                    autoSkip: false,
+                                    maxRotation: 0
+                                },
+                                afterFit: function(scale) {
+                                    scale.width = 180;
+                                }
+                            }
+                        },
+                        layout: {
+                            padding: {
+                                left: 10,
+                                right: 60,
+                                top: 10,
+                                bottom: 10
+                            }
+                        }
+                    },
+                    plugins: [{
+                        id: 'datalabels',
+                        afterDatasetsDraw: function(chart) {
+                            const { ctx, data, chartArea: { top, bottom, left, right, width, height } } = chart;
+                            ctx.save();
+                            
+                            data.datasets[0].data.forEach((value, index) => {
+                                const meta = chart.getDatasetMeta(0);
+                                const bar = meta.data[index];
+                                
+                                if (bar) {
+                                    const x = bar.x;
+                                    const y = bar.y;
+                                    const barWidth = bar.width;
+                                    const barHeight = bar.height;
+                                    
+                                    // Hitung posisi di sebelah kanan bar
+                                    const labelX = x + 5;
+                                    const labelY = y;
+                                    
+                                    // Tampilkan label di sebelah kanan bar
+                                    ctx.fillStyle = '#333333';
+                                    ctx.font = 'bold 11px Arial';
+                                    ctx.textAlign = 'left';
+                                    ctx.textBaseline = 'middle';
+                                    ctx.fillText(value.toFixed(0) + ' min', labelX, labelY);
+                                }
+                            });
+                            
+                            ctx.restore();
+                        }
+                    }]
                 });
             } catch (e) {
                 console.error('Error rendering LSM chart:', e);
@@ -2350,13 +2641,19 @@
                 
                 if (sorted.length === 0) return;
                 
+                const labels = sorted.map(s => {
+                    const name = s[0];
+                    return name.length > 25 ? name.substring(0, 22) + '...' : name;
+                });
+                const values = sorted.map(s => s[1]);
+                
                 chartInstances.lsNonMesin = new Chart(ctx, {
                     type: 'bar',
                     data: {
-                        labels: sorted.map(s => s[0]),
+                        labels,
                         datasets: [{
                             label: 'Total Minutes',
-                            data: sorted.map(s => s[1]),
+                            data: values,
                             backgroundColor: '#f59e0b'
                         }]
                     },
@@ -2364,8 +2661,83 @@
                         responsive: true,
                         maintainAspectRatio: false,
                         indexAxis: 'y',
-                        plugins: { legend: { display: false } }
-                    }
+                        plugins: { 
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    title: function(tooltipItems) {
+                                        const index = tooltipItems[0].dataIndex;
+                                        return sorted[index][0];
+                                    },
+                                    label: function(context) {
+                                        return `Duration: ${context.raw.toFixed(1)} minutes`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(value) {
+                                        return value + ' min';
+                                    }
+                                }
+                            },
+                            y: {
+                                ticks: {
+                                    font: {
+                                        size: 11
+                                    },
+                                    autoSkip: false,
+                                    maxRotation: 0
+                                },
+                                afterFit: function(scale) {
+                                    scale.width = 180;
+                                }
+                            }
+                        },
+                        layout: {
+                            padding: {
+                                left: 10,
+                                right: 60,
+                                top: 10,
+                                bottom: 10
+                            }
+                        }
+                    },
+                    plugins: [{
+                        id: 'datalabels',
+                        afterDatasetsDraw: function(chart) {
+                            const { ctx, data, chartArea: { top, bottom, left, right, width, height } } = chart;
+                            ctx.save();
+                            
+                            data.datasets[0].data.forEach((value, index) => {
+                                const meta = chart.getDatasetMeta(0);
+                                const bar = meta.data[index];
+                                
+                                if (bar) {
+                                    const x = bar.x;
+                                    const y = bar.y;
+                                    const barWidth = bar.width;
+                                    const barHeight = bar.height;
+                                    
+                                    // Hitung posisi di sebelah kanan bar
+                                    const labelX = x + 5;
+                                    const labelY = y;
+                                    
+                                    // Tampilkan label di sebelah kanan bar
+                                    ctx.fillStyle = '#333333';
+                                    ctx.font = 'bold 11px Arial';
+                                    ctx.textAlign = 'left';
+                                    ctx.textBaseline = 'middle';
+                                    ctx.fillText(value.toFixed(0) + ' min', labelX, labelY);
+                                }
+                            });
+                            
+                            ctx.restore();
+                        }
+                    }]
                 });
             } catch (e) {
                 console.error('Error rendering LSNM chart:', e);
@@ -2400,13 +2772,19 @@
                 
                 if (sorted.length === 0) return;
                 
+                const labels = sorted.map(s => {
+                    const name = s[0];
+                    return name.length > 25 ? name.substring(0, 22) + '...' : name;
+                });
+                const values = sorted.map(s => s[1]);
+                
                 chartInstances.minorStop = new Chart(ctx, {
                     type: 'bar',
                     data: {
-                        labels: sorted.map(s => s[0]),
+                        labels,
                         datasets: [{
                             label: 'Total Frequency',
-                            data: sorted.map(s => s[1]),
+                            data: values,
                             backgroundColor: '#764ba2'
                         }]
                     },
@@ -2414,8 +2792,83 @@
                         responsive: true,
                         maintainAspectRatio: false,
                         indexAxis: 'y',
-                        plugins: { legend: { display: false } }
-                    }
+                        plugins: { 
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    title: function(tooltipItems) {
+                                        const index = tooltipItems[0].dataIndex;
+                                        return sorted[index][0];
+                                    },
+                                    label: function(context) {
+                                        return `Frequency: ${context.raw} times`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(value) {
+                                        return value + 'x';
+                                    }
+                                }
+                            },
+                            y: {
+                                ticks: {
+                                    font: {
+                                        size: 11
+                                    },
+                                    autoSkip: false,
+                                    maxRotation: 0
+                                },
+                                afterFit: function(scale) {
+                                    scale.width = 180;
+                                }
+                            }
+                        },
+                        layout: {
+                            padding: {
+                                left: 10,
+                                right: 60,
+                                top: 10,
+                                bottom: 10
+                            }
+                        }
+                    },
+                    plugins: [{
+                        id: 'datalabels',
+                        afterDatasetsDraw: function(chart) {
+                            const { ctx, data, chartArea: { top, bottom, left, right, width, height } } = chart;
+                            ctx.save();
+                            
+                            data.datasets[0].data.forEach((value, index) => {
+                                const meta = chart.getDatasetMeta(0);
+                                const bar = meta.data[index];
+                                
+                                if (bar) {
+                                    const x = bar.x;
+                                    const y = bar.y;
+                                    const barWidth = bar.width;
+                                    const barHeight = bar.height;
+                                    
+                                    // Hitung posisi di sebelah kanan bar
+                                    const labelX = x + 5;
+                                    const labelY = y;
+                                    
+                                    // Tampilkan label di sebelah kanan bar
+                                    ctx.fillStyle = '#333333';
+                                    ctx.font = 'bold 11px Arial';
+                                    ctx.textAlign = 'left';
+                                    ctx.textBaseline = 'middle';
+                                    ctx.fillText(value.toFixed(0) + 'x', labelX, labelY);
+                                }
+                            });
+                            
+                            ctx.restore();
+                        }
+                    }]
                 });
             } catch (e) {
                 console.error('Error rendering minor stop chart:', e);
