@@ -1729,6 +1729,7 @@
                 picStats[r.pic].count += 1;
             });
             
+            // MODIFIKASI DI SINI: Sort by achievement (descending) bukan avgOEE
             const sorted = Object.entries(picStats)
                 .map(([pic, stats]) => ({
                     pic,
@@ -1738,7 +1739,7 @@
                     achievement: stats.totalTargetOutput > 0 ? (stats.totalOutput / stats.totalTargetOutput) * 100 : 0,
                     count: stats.count
                 }))
-                .sort((a, b) => b.avgOEE - a.avgOEE);
+                .sort((a, b) => b.achievement - a.achievement); // Diubah dari b.avgOEE - a.avgOEE menjadi b.achievement - a.achievement
             
             return sorted.map(s => `
                 <tr>
