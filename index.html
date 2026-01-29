@@ -412,9 +412,9 @@
         
         .chart-container-horizontal {
             position: relative;
-            height: 400px; /* Tambah tinggi untuk grafik horizontal */
+            height: 400px;
             margin-top: 16px;
-            padding-right: 60px; /* Ruang untuk label */
+            padding-right: 60px;
         }
         
         .status-good {
@@ -518,7 +518,6 @@
         }
         
         /* Responsive styles */
-        /* Tablet landscape & desktop small (768px - 1024px) */
         @media (min-width: 768px) and (max-width: 1024px) {
             .container-main {
                 padding: 20px;
@@ -565,7 +564,6 @@
             }
         }
         
-        /* Tablet portrait (600px - 767px) */
         @media (min-width: 600px) and (max-width: 767px) {
             .container-main {
                 padding: 16px;
@@ -625,7 +623,6 @@
             }
         }
         
-        /* Mobile landscape (480px - 599px) */
         @media (min-width: 480px) and (max-width: 599px) {
             .container-main {
                 padding: 12px;
@@ -730,7 +727,6 @@
             }
         }
         
-        /* Mobile portrait (320px - 479px) */
         @media (max-width: 479px) {
             .container-main {
                 padding: 10px;
@@ -866,7 +862,6 @@
             }
         }
         
-        /* Extra small devices (< 360px) */
         @media (max-width: 359px) {
             .container-main {
                 padding: 8px;
@@ -1578,7 +1573,7 @@
                             </div>
                         </div>
                         <div class="card">
-                            <div class="card-header">⏱️ ODT Top 10</div>
+                            <div class="card-header">⏱️ ODT Top 10 (menit)</div>
                             <div class="chart-container-horizontal">
                                 <canvas id="chart-odt"></canvas>
                             </div>
@@ -1588,13 +1583,13 @@
                     <!-- Charts Row 3 -->
                     <div class="grid-2">
                         <div class="card">
-                            <div class="card-header">🔧 Line Stop Mesin Top 10</div>
+                            <div class="card-header">🔧 Line Stop Mesin Top 10 (menit)</div>
                             <div class="chart-container-horizontal">
                                 <canvas id="chart-ls-mesin"></canvas>
                             </div>
                         </div>
                         <div class="card">
-                            <div class="card-header">⚠️ Line Stop Non Mesin Top 10</div>
+                            <div class="card-header">⚠️ Line Stop Non Mesin Top 10 (menit)</div>
                             <div class="chart-container-horizontal">
                                 <canvas id="chart-ls-non-mesin"></canvas>
                             </div>
@@ -1603,7 +1598,7 @@
                     
                     <!-- Minor Stop Chart -->
                     <div class="card">
-                        <div class="card-header">⏸️ Minor Stop Top 10</div>
+                        <div class="card-header">⏸️ Minor Stop Top 10 (kali)</div>
                         <div class="chart-container-horizontal">
                             <canvas id="chart-minor-stop"></canvas>
                         </div>
@@ -1729,7 +1724,7 @@
                 picStats[r.pic].count += 1;
             });
             
-            // MODIFIKASI DI SINI: Sort by achievement (descending) bukan avgOEE
+            // Sort by achievement (descending)
             const sorted = Object.entries(picStats)
                 .map(([pic, stats]) => ({
                     pic,
@@ -1739,7 +1734,7 @@
                     achievement: stats.totalTargetOutput > 0 ? (stats.totalOutput / stats.totalTargetOutput) * 100 : 0,
                     count: stats.count
                 }))
-                .sort((a, b) => b.achievement - a.achievement); // Diubah dari b.avgOEE - a.avgOEE menjadi b.achievement - a.achievement
+                .sort((a, b) => b.achievement - a.achievement);
             
             return sorted.map(s => `
                 <tr>
@@ -2054,7 +2049,7 @@
         }
 
         // =============================================
-        // CHART RENDERING - DENGAN LABEL PADA SETIAP BAR
+        // CHART RENDERING - REVISI: TANPA SATUAN "min"
         // =============================================
         function renderCharts() {
             const filtered = getFilteredRecords();
@@ -2069,7 +2064,7 @@
             });
             chartInstances = {};
             
-            // Render all charts with labels
+            // Render all charts
             renderTrendChart(filtered);
             renderPerMachineChart(filtered);
             renderAPQChart(filtered);
@@ -2206,19 +2201,7 @@
                         responsive: true,
                         maintainAspectRatio: false,
                         plugins: { 
-                            legend: { display: true },
-                            datalabels: {
-                                anchor: 'center',
-                                align: 'center',
-                                color: '#ffffff',
-                                font: {
-                                    weight: 'bold',
-                                    size: 11
-                                },
-                                formatter: function(value) {
-                                    return value.toFixed(1) + '%';
-                                }
-                            }
+                            legend: { display: true }
                         },
                         scales: { y: { beginAtZero: true, max: 100 } }
                     },
@@ -2419,7 +2402,7 @@
                                 beginAtZero: true,
                                 ticks: {
                                     callback: function(value) {
-                                        return value + ' min';
+                                        return value;
                                     }
                                 }
                             },
@@ -2432,14 +2415,14 @@
                                     maxRotation: 0
                                 },
                                 afterFit: function(scale) {
-                                    scale.width = 180; // Lebar untuk label y-axis
+                                    scale.width = 180;
                                 }
                             }
                         },
                         layout: {
                             padding: {
                                 left: 10,
-                                right: 60, // Ruang untuk label value
+                                right: 60,
                                 top: 10,
                                 bottom: 10
                             }
@@ -2462,15 +2445,15 @@
                                     const barHeight = bar.height;
                                     
                                     // Hitung posisi di sebelah kanan bar (horizontal chart)
-                                    const labelX = x + 5; // 5px dari ujung kanan bar
+                                    const labelX = x + 5;
                                     const labelY = y;
                                     
-                                    // Tampilkan label di sebelah kanan bar
+                                    // Tampilkan label di sebelah kanan bar (tanpa satuan)
                                     ctx.fillStyle = '#333333';
                                     ctx.font = 'bold 11px Arial';
                                     ctx.textAlign = 'left';
                                     ctx.textBaseline = 'middle';
-                                    ctx.fillText(value.toFixed(0) + ' min', labelX, labelY);
+                                    ctx.fillText(value.toFixed(0), labelX, labelY);
                                 }
                             });
                             
@@ -2550,7 +2533,7 @@
                                 beginAtZero: true,
                                 ticks: {
                                     callback: function(value) {
-                                        return value + ' min';
+                                        return value;
                                     }
                                 }
                             },
@@ -2596,12 +2579,12 @@
                                     const labelX = x + 5;
                                     const labelY = y;
                                     
-                                    // Tampilkan label di sebelah kanan bar
+                                    // Tampilkan label di sebelah kanan bar (tanpa satuan)
                                     ctx.fillStyle = '#333333';
                                     ctx.font = 'bold 11px Arial';
                                     ctx.textAlign = 'left';
                                     ctx.textBaseline = 'middle';
-                                    ctx.fillText(value.toFixed(0) + ' min', labelX, labelY);
+                                    ctx.fillText(value.toFixed(0), labelX, labelY);
                                 }
                             });
                             
@@ -2681,7 +2664,7 @@
                                 beginAtZero: true,
                                 ticks: {
                                     callback: function(value) {
-                                        return value + ' min';
+                                        return value;
                                     }
                                 }
                             },
@@ -2727,12 +2710,12 @@
                                     const labelX = x + 5;
                                     const labelY = y;
                                     
-                                    // Tampilkan label di sebelah kanan bar
+                                    // Tampilkan label di sebelah kanan bar (tanpa satuan)
                                     ctx.fillStyle = '#333333';
                                     ctx.font = 'bold 11px Arial';
                                     ctx.textAlign = 'left';
                                     ctx.textBaseline = 'middle';
-                                    ctx.fillText(value.toFixed(0) + ' min', labelX, labelY);
+                                    ctx.fillText(value.toFixed(0), labelX, labelY);
                                 }
                             });
                             
@@ -2812,7 +2795,7 @@
                                 beginAtZero: true,
                                 ticks: {
                                     callback: function(value) {
-                                        return value + 'x';
+                                        return value;
                                     }
                                 }
                             },
@@ -2858,12 +2841,12 @@
                                     const labelX = x + 5;
                                     const labelY = y;
                                     
-                                    // Tampilkan label di sebelah kanan bar
+                                    // Tampilkan label di sebelah kanan bar (tanpa satuan)
                                     ctx.fillStyle = '#333333';
                                     ctx.font = 'bold 11px Arial';
                                     ctx.textAlign = 'left';
                                     ctx.textBaseline = 'middle';
-                                    ctx.fillText(value.toFixed(0) + 'x', labelX, labelY);
+                                    ctx.fillText(value.toFixed(0), labelX, labelY);
                                 }
                             });
                             
