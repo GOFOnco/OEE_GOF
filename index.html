@@ -1003,45 +1003,30 @@
             'Longshift Malam': { start: '19:00', end: '07:00', minutes: 720 }
         };
 
-        // Filter state
+        // =============================================
+        // UTILITY FUNCTIONS - TANGGAL BULAN INI
+        // =============================================
+        function getCurrentMonthStart() {
+            const date = new Date();
+            date.setDate(1); // Set ke tanggal 1
+            return date.toISOString().split('T')[0];
+        }
+        
+        function getCurrentMonthEnd() {
+            const date = new Date();
+            date.setMonth(date.getMonth() + 1); // Ke bulan depan
+            date.setDate(0); // Set ke tanggal terakhir bulan ini
+            return date.toISOString().split('T')[0];
+        }
+
+        // Filter state - DIMULAI DARI AWAL BULAN HINGGA AKHIR BULAN
         let filters = {
-            startDate: getCurrentPeriodStart(),
-            endDate: getCurrentPeriodEnd(),
+            startDate: getCurrentMonthStart(),
+            endDate: getCurrentMonthEnd(),
             shift: 'all',
             machine: 'all',
             pic: 'all'
         };
-
-        // =============================================
-        // UTILITY FUNCTIONS
-        // =============================================
-        function getCurrentPeriodStart() {
-            const date = new Date();
-            const currentDay = date.getDate();
-            
-            if (currentDay < 01) {
-                date.setMonth(date.getMonth() - 1);
-                date.setDate(01);
-            } else {
-                date.setDate(01);
-            }
-            
-            return date.toISOString().split('T')[0];
-        }
-        
-        function getCurrentPeriodEnd() {
-            const date = new Date();
-            const currentDay = date.getDate();
-            
-            if (currentDay < 01) {
-                date.setDate(31);
-            } else {
-                date.setMonth(date.getMonth() + 0);
-                date.setDate(31);
-            }
-            
-            return date.toISOString().split('T')[0];
-        }
 
         function showToast(message, type = 'success') {
             const toast = document.createElement('div');
@@ -1482,6 +1467,10 @@
             const uniquePICs = [...new Set(allOEERecords.map(r => r.pic).filter(Boolean))];
             const uniqueMachines = [...new Set(allOEERecords.map(r => r.machine_name).filter(Boolean))];
             
+            // Format dates for display
+            const startDateDisplay = new Date(filters.startDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'long' });
+            const endDateDisplay = new Date(filters.endDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+            
             return `
                 <div class="container-main">
                     <!-- Filters -->
@@ -1489,11 +1478,11 @@
                         <div class="card-header">🔍 Filter Data</div>
                         <div class="filter-section">
                             <div>
-                                <label class="label">Start Date</label>
+                                <label class="label">Start Date (Awal Bulan)</label>
                                 <input type="date" id="filter-start-date" value="${filters.startDate}" class="input-field" onchange="updateFilter('startDate', this.value)">
                             </div>
                             <div>
-                                <label class="label">End Date</label>
+                                <label class="label">End Date (Akhir Bulan)</label>
                                 <input type="date" id="filter-end-date" value="${filters.endDate}" class="input-field" onchange="updateFilter('endDate', this.value)">
                             </div>
                             <div>
@@ -1516,6 +1505,17 @@
                                     <option value="all">All Operators</option>
                                     ${uniquePICs.map(p => `<option value="${p}" ${filters.pic === p ? 'selected' : ''}>${p}</option>`).join('')}
                                 </select>
+                            </div>
+                        </div>
+                        <div style="margin-top: 16px; padding: 12px; background: rgba(102, 125, 234, 0.1); border-radius: 8px; border-left: 4px solid var(--accent-primary);">
+                            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                <span style="color: var(--accent-primary); font-weight: 600;">📅</span>
+                                <span style="color: var(--text-primary); font-size: 14px; word-break: break-word;">
+                                    Menampilkan data dari <strong>${startDateDisplay}</strong> hingga <strong>${endDateDisplay}</strong>
+                                    <span style="color: var(--text-secondary); font-size: 13px; display: block; margin-top: 4px;">
+                                        Filter otomatis diatur ke periode bulan berjalan
+                                    </span>
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -1750,7 +1750,7 @@
 
         function generateOEEHistoryRows(records) {
             if (records.length === 0) {
-                return '<tr><td colspan="15" style="text-align: center; color: var(--text-secondary); padding: 40px;">No records found</td></tr>';
+                return '<tr><td colspan="15" style="text-align: center; color: var(--text-secondary); padding: 40px;">No records found for this period</td></tr>';
             }
             
             return records.map(r => {
@@ -2026,12 +2026,12 @@
                         
                         <div style="margin-bottom: 24px;">
                             <label class="label">Start Date</label>
-                            <input type="date" id="export-start-date" value="${getCurrentPeriodStart()}" class="input-field">
+                            <input type="date" id="export-start-date" value="${getCurrentMonthStart()}" class="input-field">
                         </div>
                         
                         <div style="margin-bottom: 24px;">
                             <label class="label">End Date</label>
-                            <input type="date" id="export-end-date" value="${getCurrentPeriodEnd()}" class="input-field">
+                            <input type="date" id="export-end-date" value="${getCurrentMonthEnd()}" class="input-field">
                         </div>
                         
                         <div style="margin-bottom: 32px;">
@@ -2049,7 +2049,7 @@
         }
 
         // =============================================
-        // CHART RENDERING - REVISI: TANPA SATUAN "min"
+        // CHART RENDERING
         // =============================================
         function renderCharts() {
             const filtered = getFilteredRecords();
