@@ -936,6 +936,20 @@
                 font-size: 18px;
             }
         }
+        
+        /* ODT Error Styling */
+        .odt-error {
+            display: none;
+            color: var(--danger);
+            font-size: 11px;
+            margin-top: 4px;
+            padding-left: 32px;
+        }
+        
+        .odt-input-error {
+            border-color: var(--danger) !important;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2) !important;
+        }
     </style>
 </head>
 <body class="h-full">
@@ -1320,7 +1334,7 @@
             if (formData.odtData) {
                 formData.odtData.forEach(odt => {
                     if (odt.checked) {
-                        const actualTime = parseFloat(odt.actualTime || odt.standardTime || 0);
+                        const actualTime = parseFloat(odt.actualTime || 0);
                         const standardTime = parseFloat(odt.standardTime || 0);
                         
                         if (actualTime <= standardTime) {
@@ -1688,7 +1702,7 @@
                     const odtData = typeof r.odt_data === 'string' ? JSON.parse(r.odt_data) : (r.odt_data || []);
                     odtData.forEach(odt => {
                         if (odt.checked) {
-                            const actualTime = parseFloat(odt.actualTime || odt.standardTime || 0);
+                            const actualTime = parseFloat(odt.actualTime || 0);
                             const standardTime = parseFloat(odt.standardTime || 0);
                             totalODT += Math.min(actualTime, standardTime);
                         }
@@ -2343,7 +2357,7 @@
                             const odtData = typeof r.odt_data === 'string' ? JSON.parse(r.odt_data) : r.odt_data;
                             odtData.forEach(odt => {
                                 if (odt.checked) {
-                                    const actualTime = parseFloat(odt.actualTime || odt.standardTime || 0);
+                                    const actualTime = parseFloat(odt.actualTime || 0);
                                     const standardTime = parseFloat(odt.standardTime || 0);
                                     const time = Math.min(actualTime, standardTime);
                                     if (odt.name) {
@@ -2888,7 +2902,7 @@
             customLSNMCounter = 0;
             customMSCounter = 0;
             
-            // Render ODT
+            // Render ODT dengan validasi
             if (currentMachineDetails.odt.length > 0) {
                 document.getElementById('odt-section').style.display = 'block';
                 const odtHTML = currentMachineDetails.odt.map(odt => `
@@ -2897,7 +2911,16 @@
                         <label style="flex: 1; cursor: pointer; word-break: break-word;" for="odt-check-${odt.id}">
                             <strong>${odt.odt_name}</strong> (Standard: ${odt.standard_time} min)
                         </label>
-                        <input type="number" id="odt-time-${odt.id}" min="0" value="${odt.standard_time}" placeholder="Actual time" class="input-field" style="width: 120px; padding: 6px 10px;" disabled oninput="checkODTExceed('${odt.id}', ${odt.standard_time})">
+                        <input type="number" id="odt-time-${odt.id}" min="0" 
+                               placeholder="Actual time *" 
+                               class="input-field odt-time-input" 
+                               style="width: 120px; padding: 6px 10px;" 
+                               disabled 
+                               oninput="validateODTInput('${odt.id}')"
+                               onblur="validateODTInput('${odt.id}')">
+                        <div class="odt-error" id="odt-error-${odt.id}" style="display: none;">
+                            ⚠️ Isi Actual Time ODT
+                        </div>
                     </div>
                     <div id="odt-exceed-warning-${odt.id}" class="odt-exceed-warning" style="display: none; margin-top: -4px; margin-bottom: 8px;"></div>
                 `).join('');
@@ -2966,25 +2989,59 @@
             updateCalculations();
         }
 
+        function validateODTInput(id) {
+            const checkbox = document.getElementById(`odt-check-${id}`);
+            const input = document.getElementById(`odt-time-${id}`);
+            const error = document.getElementById(`odt-error-${id}`);
+            
+            if (!checkbox || !input || !error) return true;
+            
+            if (checkbox.checked) {
+                const value = input.value.trim();
+                if (!value || isNaN(parseFloat(value)) || parseFloat(value) <= 0) {
+                    input.classList.add('odt-input-error');
+                    error.style.display = 'block';
+                    return false;
+                } else {
+                    input.classList.remove('odt-input-error');
+                    error.style.display = 'none';
+                    const odt = currentMachineDetails.odt.find(o => o.id === id);
+                    if (odt) {
+                        checkODTExceed(id, odt.standard_time);
+                    }
+                    return true;
+                }
+            }
+            
+            input.classList.remove('odt-input-error');
+            error.style.display = 'none';
+            return true;
+        }
+
         function toggleODT(id) {
             const checkbox = document.getElementById(`odt-check-${id}`);
             const input = document.getElementById(`odt-time-${id}`);
             const item = document.getElementById(`odt-${id}`);
+            const error = document.getElementById(`odt-error-${id}`);
             
             if (!checkbox || !input || !item) return;
             
             input.disabled = !checkbox.checked;
+            
             if (checkbox.checked) {
                 item.classList.add('active');
-                const odt = currentMachineDetails.odt.find(o => o.id === id);
-                if (odt) {
-                    checkODTExceed(id, odt.standard_time);
-                }
+                // Reset error state ketika dicentang
+                input.classList.remove('odt-input-error');
+                if (error) error.style.display = 'none';
+                // Focus ke input ketika dicentang
+                setTimeout(() => input.focus(), 100);
             } else {
                 item.classList.remove('active');
                 item.classList.remove('exceed');
                 const warning = document.getElementById(`odt-exceed-warning-${id}`);
                 if (warning) warning.style.display = 'none';
+                if (error) error.style.display = 'none';
+                input.classList.remove('odt-input-error');
             }
             
             updateCalculations();
@@ -3195,7 +3252,7 @@
                     
                     const checked = checkbox.checked;
                     const input = document.getElementById(`odt-time-${odt.id}`);
-                    const actualTime = input?.value || odt.standard_time;
+                    const actualTime = parseFloat(input?.value) || 0;
                     odtData.push({
                         name: odt.odt_name,
                         standardTime: odt.standard_time,
@@ -3388,6 +3445,43 @@
                 return;
             }
             
+            // VALIDASI: Cek semua ODT yang dicentang harus ada actual time
+            let hasODTValidationError = false;
+            let firstInvalidODTInput = null;
+            
+            if (currentMachineDetails && currentMachineDetails.odt) {
+                for (const odt of currentMachineDetails.odt) {
+                    const checkbox = document.getElementById(`odt-check-${odt.id}`);
+                    if (checkbox && checkbox.checked) {
+                        const input = document.getElementById(`odt-time-${odt.id}`);
+                        const actualTime = input?.value.trim();
+                        
+                        if (!actualTime || isNaN(parseFloat(actualTime)) || parseFloat(actualTime) <= 0) {
+                            hasODTValidationError = true;
+                            showToast(`ODT "${odt.odt_name}": Isi Actual Time ODT`, 'error');
+                            
+                            // Highlight input yang error
+                            input.classList.add('odt-input-error');
+                            const error = document.getElementById(`odt-error-${odt.id}`);
+                            if (error) error.style.display = 'block';
+                            
+                            // Scroll ke input yang error (hanya yang pertama)
+                            if (!firstInvalidODTInput) {
+                                firstInvalidODTInput = input;
+                            }
+                        }
+                    }
+                }
+            }
+            
+            if (hasODTValidationError) {
+                if (firstInvalidODTInput) {
+                    firstInvalidODTInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    firstInvalidODTInput.focus();
+                }
+                throw new Error('ODT validation failed');
+            }
+            
             // Collect all data
             const odtData = [];
             if (currentMachineDetails && currentMachineDetails.odt) {
@@ -3396,14 +3490,17 @@
                     if (!checkbox) return;
                     
                     const checked = checkbox.checked;
-                    const input = document.getElementById(`odt-time-${odt.id}`);
-                    const actualTime = input?.value || odt.standard_time;
-                    odtData.push({
-                        name: odt.odt_name,
-                        standardTime: odt.standard_time,
-                        actualTime: actualTime,
-                        checked: checked
-                    });
+                    if (checked) {
+                        const input = document.getElementById(`odt-time-${odt.id}`);
+                        const actualTime = parseFloat(input?.value) || 0;
+                        
+                        odtData.push({
+                            name: odt.odt_name,
+                            standardTime: odt.standard_time,
+                            actualTime: actualTime,
+                            checked: checked
+                        });
+                    }
                 });
             }
             
@@ -3581,7 +3678,7 @@
                 resetInputForm();
             } catch (error) {
                 hideLoading();
-                if (error.message !== 'Validation failed') {
+                if (error.message !== 'Validation failed' && error.message !== 'ODT validation failed') {
                     showToast('Failed to save OEE data', 'error');
                 }
             }
@@ -4012,7 +4109,7 @@
                         const odtData = typeof r.odt_data === 'string' ? JSON.parse(r.odt_data) : (r.odt_data || []);
                         odtData.forEach(odt => {
                             if (odt.checked) {
-                                const actualTime = parseFloat(odt.actualTime || odt.standardTime || 0);
+                                const actualTime = parseFloat(odt.actualTime || 0);
                                 const standardTime = parseFloat(odt.standardTime || 0);
                                 totalODT += Math.min(actualTime, standardTime);
                             }
