@@ -950,6 +950,53 @@
             border-color: var(--danger) !important;
             box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2) !important;
         }
+        
+        /* Chart Total Badge - DIPERBAIKI POSISI DAN UKURAN */
+        .chart-total-badge {
+            position: absolute;
+            top: 5px; /* DIPINDAH KE BAWAH AGAR TIDAK NABRAK HEADER */
+            right: 15px; /* DIPINDAH KE KIRI SEDIKIT */
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: white;
+            padding: 6px 12px; /* DIPERKECIL PADDING */
+            border-radius: 16px; /* DIBUAT LEBIH BULAT */
+            font-size: 12px; /* DIPERKECIL FONT */
+            font-weight: 700;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            white-space: nowrap; /* AGAR TIDAK PECAH BARIS */
+        }
+        
+        /* Responsive untuk badge total chart */
+        @media (max-width: 1024px) {
+            .chart-total-badge {
+                top: 40px;
+                right: 12px;
+                padding: 5px 10px;
+                font-size: 11px;
+            }
+        }
+        
+        @media (max-width: 767px) {
+            .chart-total-badge {
+                top: 35px;
+                right: 10px;
+                padding: 4px 8px;
+                font-size: 10px;
+            }
+        }
+        
+        @media (max-width: 479px) {
+            .chart-total-badge {
+                top: 30px;
+                right: 8px;
+                padding: 3px 6px;
+                font-size: 9px;
+            }
+        }
     </style>
 </head>
 <body class="h-full">
@@ -1229,7 +1276,7 @@
                     await db.from('machine_odt').insert(odtData);
                 }
                 
-                if (lineStopMesinItems.length > 0) {
+                if (lineStopMesin.length > 0) {
                     const lsmData = lineStopMesinItems.map(item => ({
                         machine_id: machineId,
                         item_name: item
@@ -1589,6 +1636,7 @@
                         <div class="card">
                             <div class="card-header">⏱️ ODT Top 10 (menit)</div>
                             <div class="chart-container-horizontal">
+                                <div id="odt-total-badge" class="chart-total-badge"></div>
                                 <canvas id="chart-odt"></canvas>
                             </div>
                         </div>
@@ -1599,12 +1647,14 @@
                         <div class="card">
                             <div class="card-header">🔧 Line Stop Mesin Top 10 (menit)</div>
                             <div class="chart-container-horizontal">
+                                <div id="lsm-total-badge" class="chart-total-badge"></div>
                                 <canvas id="chart-ls-mesin"></canvas>
                             </div>
                         </div>
                         <div class="card">
                             <div class="card-header">⚠️ Line Stop Non Mesin Top 10 (menit)</div>
                             <div class="chart-container-horizontal">
+                                <div id="lsnm-total-badge" class="chart-total-badge"></div>
                                 <canvas id="chart-ls-non-mesin"></canvas>
                             </div>
                         </div>
@@ -1614,6 +1664,7 @@
                     <div class="card">
                         <div class="card-header">⏸️ Minor Stop Top 10 (kali)</div>
                         <div class="chart-container-horizontal">
+                            <div id="ms-total-badge" class="chart-total-badge"></div>
                             <canvas id="chart-minor-stop"></canvas>
                         </div>
                     </div>
@@ -2351,6 +2402,7 @@
             
             try {
                 const odtStats = {};
+                let totalMinutes = 0;
                 records.forEach(r => {
                     try {
                         if (r.odt_data) {
@@ -2362,6 +2414,7 @@
                                     const time = Math.min(actualTime, standardTime);
                                     if (odt.name) {
                                         odtStats[odt.name] = (odtStats[odt.name] || 0) + time;
+                                        totalMinutes += time;
                                     }
                                 }
                             });
@@ -2376,6 +2429,12 @@
                     .slice(0, 10);
                 
                 if (sorted.length === 0) return;
+                
+                // Update total badge - DIPINDAH POSISINYA
+                const totalBadge = document.getElementById('odt-total-badge');
+                if (totalBadge) {
+                    totalBadge.innerHTML = `📊 Total: ${totalMinutes.toFixed(0)} menit`;
+                }
                 
                 const labels = sorted.map(s => {
                     const name = s[0];
@@ -2437,7 +2496,7 @@
                             padding: {
                                 left: 10,
                                 right: 60,
-                                top: 10,
+                                top: 40, // DITAMBAHKAN PADDING ATAS UNTUK BADGE
                                 bottom: 10
                             }
                         }
@@ -2486,6 +2545,7 @@
             
             try {
                 const lsStats = {};
+                let totalMinutes = 0;
                 records.forEach(r => {
                     try {
                         if (r.line_stop_mesin_data) {
@@ -2494,6 +2554,7 @@
                                 const duration = parseFloat(ls.duration || 0);
                                 if (ls.item) {
                                     lsStats[ls.item] = (lsStats[ls.item] || 0) + duration;
+                                    totalMinutes += duration;
                                 }
                             });
                         }
@@ -2507,6 +2568,12 @@
                     .slice(0, 10);
                 
                 if (sorted.length === 0) return;
+                
+                // Update total badge - DIPINDAH POSISINYA
+                const totalBadge = document.getElementById('lsm-total-badge');
+                if (totalBadge) {
+                    totalBadge.innerHTML = `🔧 Total: ${totalMinutes.toFixed(0)} menit`;
+                }
                 
                 const labels = sorted.map(s => {
                     const name = s[0];
@@ -2568,7 +2635,7 @@
                             padding: {
                                 left: 10,
                                 right: 60,
-                                top: 10,
+                                top: 40, // DITAMBAHKAN PADDING ATAS UNTUK BADGE
                                 bottom: 10
                             }
                         }
@@ -2617,6 +2684,7 @@
             
             try {
                 const lsStats = {};
+                let totalMinutes = 0;
                 records.forEach(r => {
                     try {
                         if (r.line_stop_non_mesin_data) {
@@ -2625,6 +2693,7 @@
                                 const duration = parseFloat(ls.duration || 0);
                                 if (ls.item) {
                                     lsStats[ls.item] = (lsStats[ls.item] || 0) + duration;
+                                    totalMinutes += duration;
                                 }
                             });
                         }
@@ -2638,6 +2707,12 @@
                     .slice(0, 10);
                 
                 if (sorted.length === 0) return;
+                
+                // Update total badge - DIPINDAH POSISINYA
+                const totalBadge = document.getElementById('lsnm-total-badge');
+                if (totalBadge) {
+                    totalBadge.innerHTML = `⚠️ Total: ${totalMinutes.toFixed(0)} menit`;
+                }
                 
                 const labels = sorted.map(s => {
                     const name = s[0];
@@ -2699,7 +2774,7 @@
                             padding: {
                                 left: 10,
                                 right: 60,
-                                top: 10,
+                                top: 40, // DITAMBAHKAN PADDING ATAS UNTUK BADGE
                                 bottom: 10
                             }
                         }
@@ -2748,6 +2823,7 @@
             
             try {
                 const msStats = {};
+                let totalCount = 0;
                 records.forEach(r => {
                     try {
                         if (r.minor_stop_data) {
@@ -2756,6 +2832,7 @@
                                 const frequency = parseFloat(ms.frequency || 0);
                                 if (ms.item) {
                                     msStats[ms.item] = (msStats[ms.item] || 0) + frequency;
+                                    totalCount += frequency;
                                 }
                             });
                         }
@@ -2769,6 +2846,12 @@
                     .slice(0, 10);
                 
                 if (sorted.length === 0) return;
+                
+                // Update total badge - DIPINDAH POSISINYA
+                const totalBadge = document.getElementById('ms-total-badge');
+                if (totalBadge) {
+                    totalBadge.innerHTML = `⏸️ Total: ${totalCount.toFixed(0)} kali`;
+                }
                 
                 const labels = sorted.map(s => {
                     const name = s[0];
@@ -2830,7 +2913,7 @@
                             padding: {
                                 left: 10,
                                 right: 60,
-                                top: 10,
+                                top: 40, // DITAMBAHKAN PADDING ATAS UNTUK BADGE
                                 bottom: 10
                             }
                         }
