@@ -725,24 +725,6 @@
                 right: 16px;
                 font-size: 22px;
             }
-            
-            .checkbox-item {
-                padding: 10px;
-                font-size: 13px;
-            }
-            
-            .target-box {
-                padding: 14px;
-            }
-            
-            #target-text {
-                font-size: 14px;
-                padding: 10px;
-            }
-            
-            #target-details {
-                font-size: 12px;
-            }
         }
         
         @media (max-width: 479px) {
@@ -955,19 +937,65 @@
             }
         }
         
-        /* Style untuk field actual time yang lebih kecil */
-        .odt-actual-time {
-            width: 90px !important;
-            padding: 4px 6px !important;
-            font-size: 12px !important;
-            text-align: center !important;
+        /* ODT Error Styling */
+        .odt-error {
+            display: none;
+            color: var(--danger);
+            font-size: 11px;
+            margin-top: 4px;
+            padding-left: 32px;
         }
         
-        /* Style untuk field yang disable ketika target per minute = 0 */
-        .disabled-for-zero-target {
-            background-color: rgba(239, 239, 239, 0.3) !important;
-            color: var(--text-secondary) !important;
-            cursor: not-allowed !important;
+        .odt-input-error {
+            border-color: var(--danger) !important;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2) !important;
+        }
+        
+        /* Chart Total Badge - DIPERBAIKI POSISI DAN UKURAN */
+        .chart-total-badge {
+            position: absolute;
+            top: 5px;
+            right: 15px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: white;
+            padding: 6px 12px;
+            border-radius: 16px;
+            font-size: 12px;
+            font-weight: 700;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            white-space: nowrap;
+        }
+        
+        /* Responsive untuk badge total chart */
+        @media (max-width: 1024px) {
+            .chart-total-badge {
+                top: 40px;
+                right: 12px;
+                padding: 5px 10px;
+                font-size: 11px;
+            }
+        }
+        
+        @media (max-width: 767px) {
+            .chart-total-badge {
+                top: 35px;
+                right: 10px;
+                padding: 4px 8px;
+                font-size: 10px;
+            }
+        }
+        
+        @media (max-width: 479px) {
+            .chart-total-badge {
+                top: 30px;
+                right: 8px;
+                padding: 3px 6px;
+                font-size: 9px;
+            }
         }
     </style>
 </head>
@@ -1041,18 +1069,17 @@
         // =============================================
         function getCurrentMonthStart() {
             const date = new Date();
-            date.setDate(1); // Set ke tanggal 1
+            date.setDate(1);
             return date.toISOString().split('T')[0];
         }
         
         function getCurrentMonthEnd() {
             const date = new Date();
-            date.setMonth(date.getMonth() + 1); // Ke bulan depan
-            date.setDate(0); // Set ke tanggal terakhir bulan ini
+            date.setMonth(date.getMonth() + 1);
+            date.setDate(0);
             return date.toISOString().split('T')[0];
         }
 
-        // Filter state - DIMULAI DARI AWAL BULAN HINGGA AKHIR BULAN
         let filters = {
             startDate: getCurrentMonthStart(),
             endDate: getCurrentMonthEnd(),
@@ -1176,7 +1203,6 @@
                 
                 const machineId = machine.id;
                 
-                // Save ODT items
                 if (odtItems.length > 0) {
                     const odtData = odtItems.map(item => ({
                         machine_id: machineId,
@@ -1186,7 +1212,6 @@
                     await db.from('machine_odt').insert(odtData);
                 }
                 
-                // Save Line Stop Mesin items
                 if (lineStopMesinItems.length > 0) {
                     const lsmData = lineStopMesinItems.map(item => ({
                         machine_id: machineId,
@@ -1195,7 +1220,6 @@
                     await db.from('machine_line_stop_mesin').insert(lsmData);
                 }
                 
-                // Save Line Stop Non Mesin items
                 if (lineStopNonMesinItems.length > 0) {
                     const lsnmData = lineStopNonMesinItems.map(item => ({
                         machine_id: machineId,
@@ -1204,7 +1228,6 @@
                     await db.from('machine_line_stop_non_mesin').insert(lsnmData);
                 }
                 
-                // Save Minor Stop items
                 if (minorStopItems.length > 0) {
                     const msData = minorStopItems.map(item => ({
                         machine_id: machineId,
@@ -1222,7 +1245,6 @@
 
         async function updateMachine(machineId, machineData, odtItems, lineStopMesinItems, lineStopNonMesinItems, minorStopItems) {
             try {
-                // Update machine
                 const { error: machineError } = await db
                     .from('machines')
                     .update(machineData)
@@ -1230,7 +1252,6 @@
                 
                 if (machineError) throw machineError;
                 
-                // Delete existing related data
                 await Promise.all([
                     db.from('machine_odt').delete().eq('machine_id', machineId),
                     db.from('machine_line_stop_mesin').delete().eq('machine_id', machineId),
@@ -1238,7 +1259,6 @@
                     db.from('machine_minor_stop').delete().eq('machine_id', machineId)
                 ]);
                 
-                // Insert new data
                 if (odtItems.length > 0) {
                     const odtData = odtItems.map(item => ({
                         machine_id: machineId,
@@ -1296,7 +1316,6 @@
 
         async function saveOEERecord(recordData) {
             try {
-                // Convert complex objects to JSON strings for Supabase
                 const cleanedData = {
                     ...recordData,
                     odt_data: JSON.stringify(recordData.odt_data || []),
@@ -1323,14 +1342,13 @@
         }
 
         // =============================================
-        // CALCULATION FUNCTIONS - MODIFIED FOR TARGET PER MINUTE 0
+        // CALCULATION FUNCTIONS
         // =============================================
         function calculateOEE(formData) {
             const shiftMinutes = SHIFTS[formData.shift]?.minutes || 0;
             const targetPerMinute = formData.targetPerMinute || 0;
             
-            // Jika shift minutes = 0, semua nilai 0
-            if (!shiftMinutes) {
+            if (!shiftMinutes || !targetPerMinute) {
                 return {
                     availabilityActual: 0,
                     availability365: 0,
@@ -1347,7 +1365,6 @@
                 };
             }
             
-            // Calculate ODT with exceed logic
             let totalODT = 0;
             let odtExceeds = [];
             
@@ -1372,7 +1389,6 @@
                 });
             }
             
-            // Calculate total Line Stop Mesin
             let totalLineStopMesin = 0;
             if (formData.lineStopMesinData) {
                 formData.lineStopMesinData.forEach(ls => {
@@ -1380,7 +1396,6 @@
                 });
             }
             
-            // Calculate total Line Stop Non Mesin (including ODT exceeds)
             let totalLineStopNonMesin = 0;
             if (formData.lineStopNonMesinData) {
                 formData.lineStopNonMesinData.forEach(ls => {
@@ -1388,49 +1403,28 @@
                 });
             }
             
-            // Add ODT exceeds to Line Stop Non Mesin
             odtExceeds.forEach(exceed => {
                 totalLineStopNonMesin += exceed.duration;
             });
             
-            // Availability Actual: (jam kerja - odt - (line stop mesin + line stop non mesin))/(jam kerja - odt)
             const availabilityActual = shiftMinutes - totalODT > 0 
                 ? ((shiftMinutes - totalODT - (totalLineStopMesin + totalLineStopNonMesin)) / (shiftMinutes - totalODT)) * 100 
                 : 0;
             
-            // Availability 365: (jam kerja - odt - (line stop mesin + line stop non mesin))/jam kerja
             const availability365 = shiftMinutes > 0 
                 ? ((shiftMinutes - totalODT - (totalLineStopMesin + totalLineStopNonMesin)) / shiftMinutes) * 100 
                 : 0;
             
-            // MODIFIKASI UTAMA: Jika target per minute = 0, maka performance = 100%
-            let performance = 100; // Default 100% jika target per minute 0
+            const availableTimeActual = shiftMinutes - totalODT - totalLineStopMesin - totalLineStopNonMesin;
+            const idealOutput = availableTimeActual * targetPerMinute;
+            const performance = idealOutput > 0 ? (formData.actualOutput / idealOutput) * 100 : 0;
             
-            if (targetPerMinute > 0) {
-                // Hitung performance hanya jika target per minute > 0
-                const availableTimeActual = shiftMinutes - totalODT - totalLineStopMesin - totalLineStopNonMesin;
-                const idealOutput = availableTimeActual * targetPerMinute;
-                if (idealOutput > 0) {
-                    performance = (formData.actualOutput / idealOutput) * 100;
-                } else {
-                    performance = 0;
-                }
-            }
+            const quality = formData.actualOutput > 0 
+                ? ((formData.actualOutput - formData.reject) / formData.actualOutput) * 100 
+                : 0;
             
-            // MODIFIKASI UTAMA: Jika target per minute = 0, maka quality = 100%
-            let quality = 100; // Default 100% jika target per minute 0
-            
-            if (targetPerMinute > 0) {
-                // Hitung quality hanya jika target per minute > 0
-                quality = formData.actualOutput > 0 
-                    ? ((formData.actualOutput - formData.reject) / formData.actualOutput) * 100 
-                    : 0;
-            }
-            
-            // OEE Actual
             const oeeActual = (availabilityActual * performance * quality) / 10000;
             
-            // OEE 365
             const oee365 = (availability365 * performance * quality) / 10000;
             
             return {
@@ -1444,7 +1438,7 @@
                 totalLineStopMesin,
                 totalLineStopNonMesin,
                 odtExceeds,
-                remainingTime: shiftMinutes - totalODT - totalLineStopMesin - totalLineStopNonMesin,
+                remainingTime: availableTimeActual,
                 shiftMinutes
             };
         }
@@ -1506,16 +1500,13 @@
         function renderDashboard() {
             const filtered = getFilteredRecords();
             
-            // Calculate averages
             const avgOEEActual = filtered.length > 0 ? filtered.reduce((sum, r) => sum + (r.oee_actual || 0), 0) / filtered.length : 0;
             const avgOEE365 = filtered.length > 0 ? filtered.reduce((sum, r) => sum + (r.oee_365 || 0), 0) / filtered.length : 0;
             const totalOutput = filtered.reduce((sum, r) => sum + (r.actual_output || 0), 0);
             
-            // Get unique PICs and machines
             const uniquePICs = [...new Set(allOEERecords.map(r => r.pic).filter(Boolean))];
             const uniqueMachines = [...new Set(allOEERecords.map(r => r.machine_name).filter(Boolean))];
             
-            // Format dates for display
             const startDateDisplay = new Date(filters.startDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'long' });
             const endDateDisplay = new Date(filters.endDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
             
@@ -1623,6 +1614,7 @@
                         <div class="card">
                             <div class="card-header">⏱️ ODT Top 10 (menit)</div>
                             <div class="chart-container-horizontal">
+                                <div id="odt-total-badge" class="chart-total-badge"></div>
                                 <canvas id="chart-odt"></canvas>
                             </div>
                         </div>
@@ -1633,12 +1625,14 @@
                         <div class="card">
                             <div class="card-header">🔧 Line Stop Mesin Top 10 (menit)</div>
                             <div class="chart-container-horizontal">
+                                <div id="lsm-total-badge" class="chart-total-badge"></div>
                                 <canvas id="chart-ls-mesin"></canvas>
                             </div>
                         </div>
                         <div class="card">
                             <div class="card-header">⚠️ Line Stop Non Mesin Top 10 (menit)</div>
                             <div class="chart-container-horizontal">
+                                <div id="lsnm-total-badge" class="chart-total-badge"></div>
                                 <canvas id="chart-ls-non-mesin"></canvas>
                             </div>
                         </div>
@@ -1648,6 +1642,7 @@
                     <div class="card">
                         <div class="card-header">⏸️ Minor Stop Top 10 (kali)</div>
                         <div class="chart-container-horizontal">
+                            <div id="ms-total-badge" class="chart-total-badge"></div>
                             <canvas id="chart-minor-stop"></canvas>
                         </div>
                     </div>
@@ -1662,8 +1657,6 @@
                                         <th class="nowrap">PIC</th>
                                         <th class="nowrap">Avg OEE Actual</th>
                                         <th class="nowrap">Total Output</th>
-                                        <th class="nowrap">Target Output</th>
-                                        <th class="nowrap">Achievement</th>
                                         <th class="nowrap">Records</th>
                                     </tr>
                                 </thead>
@@ -1718,81 +1711,29 @@
                     picStats[r.pic] = {
                         totalOEE: 0,
                         totalOutput: 0,
-                        totalTargetOutput: 0,
                         count: 0
                     };
                 }
                 picStats[r.pic].totalOEE += r.oee_actual || 0;
                 picStats[r.pic].totalOutput += r.actual_output || 0;
-                
-                // Calculate target output for this record
-                const shiftMinutes = SHIFTS[r.shift]?.minutes || 0;
-                const machine = allMachines.find(m => m.id === r.machine_id);
-                const targetPerMinute = machine?.target_per_minute || 0;
-                
-                // Calculate ODT, Line Stop Mesin, Line Stop Non Mesin
-                let totalODT = 0;
-                try {
-                    const odtData = typeof r.odt_data === 'string' ? JSON.parse(r.odt_data) : (r.odt_data || []);
-                    odtData.forEach(odt => {
-                        if (odt.checked) {
-                            const actualTime = parseFloat(odt.actualTime || 0);
-                            const standardTime = parseFloat(odt.standardTime || 0);
-                            totalODT += Math.min(actualTime, standardTime);
-                        }
-                    });
-                } catch (e) {
-                    console.error('Error parsing ODT data:', e);
-                }
-                
-                let totalLSM = 0;
-                try {
-                    const lsmData = typeof r.line_stop_mesin_data === 'string' ? JSON.parse(r.line_stop_mesin_data) : (r.line_stop_mesin_data || []);
-                    lsmData.forEach(ls => {
-                        totalLSM += parseFloat(ls.duration || 0);
-                    });
-                } catch (e) {
-                    console.error('Error parsing LSM data:', e);
-                }
-                
-                let totalLSNM = 0;
-                try {
-                    const lsnmData = typeof r.line_stop_non_mesin_data === 'string' ? JSON.parse(r.line_stop_non_mesin_data) : (r.line_stop_non_mesin_data || []);
-                    lsnmData.forEach(ls => {
-                        totalLSNM += parseFloat(ls.duration || 0);
-                    });
-                } catch (e) {
-                    console.error('Error parsing LSNM data:', e);
-                }
-                
-                const availableTime = shiftMinutes - totalODT - totalLSM - totalLSNM;
-                
-                // Jika target per minute = 0, maka target output = 0 (tidak ada target)
-                const targetOutput = targetPerMinute > 0 ? availableTime * targetPerMinute : 0;
-                
-                picStats[r.pic].totalTargetOutput += targetOutput;
                 picStats[r.pic].count += 1;
             });
             
-            // Sort by achievement (descending)
+            // PERUBAHAN: Sort berdasarkan Avg OEE Actual tertinggi ke terendah
             const sorted = Object.entries(picStats)
                 .map(([pic, stats]) => ({
                     pic,
                     avgOEE: stats.totalOEE / stats.count,
                     totalOutput: stats.totalOutput,
-                    totalTargetOutput: stats.totalTargetOutput,
-                    achievement: stats.totalTargetOutput > 0 ? (stats.totalOutput / stats.totalTargetOutput) * 100 : (stats.totalTargetOutput === 0 ? 100 : 0),
                     count: stats.count
                 }))
-                .sort((a, b) => b.achievement - a.achievement);
+                .sort((a, b) => b.avgOEE - a.avgOEE);
             
             return sorted.map(s => `
                 <tr>
                     <td class="wrap-text"><strong>${s.pic}</strong></td>
                     <td class="${s.avgOEE >= 88 ? 'status-good' : 'status-bad'} wrap-text">${s.avgOEE.toFixed(1)}%</td>
                     <td class="wrap-text">${s.totalOutput.toLocaleString('id-ID')}</td>
-                    <td class="wrap-text">${Math.round(s.totalTargetOutput).toLocaleString('id-ID')}</td>
-                    <td class="${s.achievement >= 100 ? 'status-good' : 'status-bad'} wrap-text">${s.achievement.toFixed(1)}%</td>
                     <td class="wrap-text">${s.count}</td>
                 </tr>
             `).join('');
@@ -1804,7 +1745,6 @@
             }
             
             return records.map(r => {
-                // Extract WR numbers from Line Stop Mesin data
                 let wrNumbers = [];
                 try {
                     if (r.line_stop_mesin_data) {
@@ -1936,25 +1876,13 @@
                         <!-- Output -->
                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-bottom: 24px;">
                             <div>
-                                <label class="label">Actual Output</label>
-                                <input type="number" id="input-output" min="0" class="input-field" oninput="updateCalculations()" placeholder="Required if target per minute > 0">
+                                <label class="label">Actual Output *</label>
+                                <input type="number" id="input-output" min="0" class="input-field" oninput="updateCalculations()">
                             </div>
                             <div>
                                 <label class="label">Reject</label>
-                                <input type="number" id="input-reject" value="0" min="0" class="input-field" oninput="updateCalculations()" placeholder="Required if target per minute > 0">
+                                <input type="number" id="input-reject" value="0" min="0" class="input-field" oninput="updateCalculations()">
                             </div>
-                        </div>
-                        
-                        <!-- Info untuk mesin dengan target per minute = 0 -->
-                        <div id="zero-target-info" style="display: none; background: rgba(102, 125, 234, 0.1); padding: 16px; border-radius: 8px; margin-bottom: 24px; border: 2px solid var(--accent-primary);">
-                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-                                <span style="color: var(--accent-primary); font-size: 20px;">ℹ️</span>
-                                <strong style="color: var(--accent-primary); word-break: break-word;">Info:</strong>
-                            </div>
-                            <p style="color: var(--text-primary); font-size: 14px; line-height: 1.5; word-break: break-word;">
-                                Machine ini memiliki target per minute = 0. <strong>Actual Output dan Reject tidak perlu diisi.</strong><br>
-                                Performance dan Quality akan otomatis dihitung sebagai 100%.
-                            </p>
                         </div>
                         
                         <!-- Target Recommendation -->
@@ -2116,7 +2044,6 @@
         function renderCharts() {
             const filtered = getFilteredRecords();
             
-            // Destroy existing charts
             Object.values(chartInstances).forEach(chart => {
                 try {
                     if (chart && chart.destroy) chart.destroy();
@@ -2126,7 +2053,6 @@
             });
             chartInstances = {};
             
-            // Render all charts
             renderTrendChart(filtered);
             renderPerMachineChart(filtered);
             renderAPQChart(filtered);
@@ -2283,11 +2209,9 @@
                                     const barWidth = bar.width;
                                     const barHeight = bar.height;
                                     
-                                    // Hitung posisi tengah bar
                                     const centerX = x;
                                     const centerY = y + (barHeight / 2);
                                     
-                                    // Tampilkan label di tengah bar
                                     ctx.fillStyle = '#ffffff';
                                     ctx.font = 'bold 11px Arial';
                                     ctx.textAlign = 'center';
@@ -2371,11 +2295,9 @@
                                     const barWidth = bar.width;
                                     const barHeight = bar.height;
                                     
-                                    // Hitung posisi tengah bar
                                     const centerX = x;
                                     const centerY = y + (barHeight / 2);
                                     
-                                    // Tampilkan label di tengah bar
                                     ctx.fillStyle = '#ffffff';
                                     ctx.font = 'bold 12px Arial';
                                     ctx.textAlign = 'center';
@@ -2399,6 +2321,7 @@
             
             try {
                 const odtStats = {};
+                let totalMinutes = 0;
                 records.forEach(r => {
                     try {
                         if (r.odt_data) {
@@ -2410,6 +2333,7 @@
                                     const time = Math.min(actualTime, standardTime);
                                     if (odt.name) {
                                         odtStats[odt.name] = (odtStats[odt.name] || 0) + time;
+                                        totalMinutes += time;
                                     }
                                 }
                             });
@@ -2424,6 +2348,11 @@
                     .slice(0, 10);
                 
                 if (sorted.length === 0) return;
+                
+                const totalBadge = document.getElementById('odt-total-badge');
+                if (totalBadge) {
+                    totalBadge.innerHTML = `📊 Total: ${totalMinutes.toFixed(0)} menit`;
+                }
                 
                 const labels = sorted.map(s => {
                     const name = s[0];
@@ -2485,7 +2414,7 @@
                             padding: {
                                 left: 10,
                                 right: 60,
-                                top: 10,
+                                top: 40,
                                 bottom: 10
                             }
                         }
@@ -2506,11 +2435,9 @@
                                     const barWidth = bar.width;
                                     const barHeight = bar.height;
                                     
-                                    // Hitung posisi di sebelah kanan bar (horizontal chart)
                                     const labelX = x + 5;
                                     const labelY = y;
                                     
-                                    // Tampilkan label di sebelah kanan bar (tanpa satuan)
                                     ctx.fillStyle = '#333333';
                                     ctx.font = 'bold 11px Arial';
                                     ctx.textAlign = 'left';
@@ -2534,6 +2461,7 @@
             
             try {
                 const lsStats = {};
+                let totalMinutes = 0;
                 records.forEach(r => {
                     try {
                         if (r.line_stop_mesin_data) {
@@ -2542,6 +2470,7 @@
                                 const duration = parseFloat(ls.duration || 0);
                                 if (ls.item) {
                                     lsStats[ls.item] = (lsStats[ls.item] || 0) + duration;
+                                    totalMinutes += duration;
                                 }
                             });
                         }
@@ -2555,6 +2484,11 @@
                     .slice(0, 10);
                 
                 if (sorted.length === 0) return;
+                
+                const totalBadge = document.getElementById('lsm-total-badge');
+                if (totalBadge) {
+                    totalBadge.innerHTML = `🔧 Total: ${totalMinutes.toFixed(0)} menit`;
+                }
                 
                 const labels = sorted.map(s => {
                     const name = s[0];
@@ -2616,7 +2550,7 @@
                             padding: {
                                 left: 10,
                                 right: 60,
-                                top: 10,
+                                top: 40,
                                 bottom: 10
                             }
                         }
@@ -2637,11 +2571,9 @@
                                     const barWidth = bar.width;
                                     const barHeight = bar.height;
                                     
-                                    // Hitung posisi di sebelah kanan bar
                                     const labelX = x + 5;
                                     const labelY = y;
                                     
-                                    // Tampilkan label di sebelah kanan bar (tanpa satuan)
                                     ctx.fillStyle = '#333333';
                                     ctx.font = 'bold 11px Arial';
                                     ctx.textAlign = 'left';
@@ -2665,6 +2597,7 @@
             
             try {
                 const lsStats = {};
+                let totalMinutes = 0;
                 records.forEach(r => {
                     try {
                         if (r.line_stop_non_mesin_data) {
@@ -2673,6 +2606,7 @@
                                 const duration = parseFloat(ls.duration || 0);
                                 if (ls.item) {
                                     lsStats[ls.item] = (lsStats[ls.item] || 0) + duration;
+                                    totalMinutes += duration;
                                 }
                             });
                         }
@@ -2686,6 +2620,11 @@
                     .slice(0, 10);
                 
                 if (sorted.length === 0) return;
+                
+                const totalBadge = document.getElementById('lsnm-total-badge');
+                if (totalBadge) {
+                    totalBadge.innerHTML = `⚠️ Total: ${totalMinutes.toFixed(0)} menit`;
+                }
                 
                 const labels = sorted.map(s => {
                     const name = s[0];
@@ -2747,7 +2686,7 @@
                             padding: {
                                 left: 10,
                                 right: 60,
-                                top: 10,
+                                top: 40,
                                 bottom: 10
                             }
                         }
@@ -2768,11 +2707,9 @@
                                     const barWidth = bar.width;
                                     const barHeight = bar.height;
                                     
-                                    // Hitung posisi di sebelah kanan bar
                                     const labelX = x + 5;
                                     const labelY = y;
                                     
-                                    // Tampilkan label di sebelah kanan bar (tanpa satuan)
                                     ctx.fillStyle = '#333333';
                                     ctx.font = 'bold 11px Arial';
                                     ctx.textAlign = 'left';
@@ -2796,6 +2733,7 @@
             
             try {
                 const msStats = {};
+                let totalCount = 0;
                 records.forEach(r => {
                     try {
                         if (r.minor_stop_data) {
@@ -2804,6 +2742,7 @@
                                 const frequency = parseFloat(ms.frequency || 0);
                                 if (ms.item) {
                                     msStats[ms.item] = (msStats[ms.item] || 0) + frequency;
+                                    totalCount += frequency;
                                 }
                             });
                         }
@@ -2817,6 +2756,11 @@
                     .slice(0, 10);
                 
                 if (sorted.length === 0) return;
+                
+                const totalBadge = document.getElementById('ms-total-badge');
+                if (totalBadge) {
+                    totalBadge.innerHTML = `⏸️ Total: ${totalCount.toFixed(0)} kali`;
+                }
                 
                 const labels = sorted.map(s => {
                     const name = s[0];
@@ -2878,7 +2822,7 @@
                             padding: {
                                 left: 10,
                                 right: 60,
-                                top: 10,
+                                top: 40,
                                 bottom: 10
                             }
                         }
@@ -2899,11 +2843,9 @@
                                     const barWidth = bar.width;
                                     const barHeight = bar.height;
                                     
-                                    // Hitung posisi di sebelah kanan bar
                                     const labelX = x + 5;
                                     const labelY = y;
                                     
-                                    // Tampilkan label di sebelah kanan bar (tanpa satuan)
                                     ctx.fillStyle = '#333333';
                                     ctx.font = 'bold 11px Arial';
                                     ctx.textAlign = 'left';
@@ -2937,7 +2879,6 @@
                 document.getElementById('line-stop-mesin-section').style.display = 'none';
                 document.getElementById('line-stop-non-mesin-section').style.display = 'none';
                 document.getElementById('minor-stop-section').style.display = 'none';
-                document.getElementById('zero-target-info').style.display = 'none';
                 return;
             }
             
@@ -2946,61 +2887,34 @@
             currentMachineDetails = await loadMachineDetails(machineId);
             hideLoading();
             
-            // Reset counters
             customLSMCounter = 0;
             customLSNMCounter = 0;
             customMSCounter = 0;
             
-            // Show/hide zero target info
-            const zeroTargetInfo = document.getElementById('zero-target-info');
-            const outputField = document.getElementById('input-output');
-            const rejectField = document.getElementById('input-reject');
-            
-            if (currentMachineData && currentMachineData.target_per_minute === 0) {
-                zeroTargetInfo.style.display = 'block';
-                // Tambahkan class disabled dan atur placeholder
-                if (outputField) {
-                    outputField.classList.add('disabled-for-zero-target');
-                    outputField.placeholder = 'Not required (target per minute = 0)';
-                    outputField.disabled = true;
-                }
-                if (rejectField) {
-                    rejectField.classList.add('disabled-for-zero-target');
-                    rejectField.placeholder = 'Not required (target per minute = 0)';
-                    rejectField.disabled = true;
-                }
-            } else {
-                zeroTargetInfo.style.display = 'none';
-                // Hapus class disabled dan reset placeholder
-                if (outputField) {
-                    outputField.classList.remove('disabled-for-zero-target');
-                    outputField.placeholder = 'Required if target per minute > 0';
-                    outputField.disabled = false;
-                }
-                if (rejectField) {
-                    rejectField.classList.remove('disabled-for-zero-target');
-                    rejectField.placeholder = 'Required if target per minute > 0';
-                    rejectField.disabled = false;
-                }
-            }
-            
-            // Render ODT - DIMODIFIKASI: Field actual time lebih kecil
             if (currentMachineDetails.odt.length > 0) {
                 document.getElementById('odt-section').style.display = 'block';
                 const odtHTML = currentMachineDetails.odt.map(odt => `
                     <div class="checkbox-item" id="odt-${odt.id}">
                         <input type="checkbox" id="odt-check-${odt.id}" onchange="toggleODT('${odt.id}')">
                         <label style="flex: 1; cursor: pointer; word-break: break-word;" for="odt-check-${odt.id}">
-                            <strong>${odt.odt_name}</strong> <span style="color: var(--text-secondary); font-size: 12px;">(Standard: ${odt.standard_time} min)</span>
+                            <strong>${odt.odt_name}</strong> (Standard: ${odt.standard_time} min)
                         </label>
-                        <input type="number" id="odt-time-${odt.id}" min="0" step="0.1" placeholder="Actual time" class="odt-actual-time input-field" disabled oninput="checkODTExceed('${odt.id}', ${odt.standard_time})">
+                        <input type="number" id="odt-time-${odt.id}" min="0" 
+                               placeholder="Actual time *" 
+                               class="input-field odt-time-input" 
+                               style="width: 120px; padding: 6px 10px;" 
+                               disabled 
+                               oninput="validateODTInput('${odt.id}')"
+                               onblur="validateODTInput('${odt.id}')">
+                        <div class="odt-error" id="odt-error-${odt.id}" style="display: none;">
+                            ⚠️ Isi Actual Time ODT
+                        </div>
                     </div>
                     <div id="odt-exceed-warning-${odt.id}" class="odt-exceed-warning" style="display: none; margin-top: -4px; margin-bottom: 8px;"></div>
                 `).join('');
                 document.getElementById('odt-list').innerHTML = odtHTML;
             }
             
-            // Render Line Stop Mesin
             if (currentMachineDetails.lineStopMesin.length > 0) {
                 document.getElementById('line-stop-mesin-section').style.display = 'block';
                 const lsmHTML = currentMachineDetails.lineStopMesin.map(ls => `
@@ -3011,7 +2925,7 @@
                         </div>
                         <div id="lsm-details-${ls.id}" style="display: none; padding-left: 32px;">
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                                <input type="number" id="lsm-duration-${ls.id}" min="0" step="0.1" placeholder="Duration (min)" class="input-field" style="padding: 6px 10px;" oninput="checkLSMDuration('${ls.id}')">
+                                <input type="number" id="lsm-duration-${ls.id}" min="0" placeholder="Duration (min)" class="input-field" style="padding: 6px 10px;" oninput="checkLSMDuration('${ls.id}')">
                                 <input type="text" id="lsm-action-${ls.id}" placeholder="Action" class="input-field" style="padding: 6px 10px;">
                             </div>
                             <input type="text" id="lsm-wr-${ls.id}" placeholder="No WR" class="input-field" style="margin-top: 8px; padding: 6px 10px;">
@@ -3022,7 +2936,6 @@
                 document.getElementById('line-stop-mesin-list').innerHTML = lsmHTML;
             }
             
-            // Render Line Stop Non Mesin
             if (currentMachineDetails.lineStopNonMesin.length > 0) {
                 document.getElementById('line-stop-non-mesin-section').style.display = 'block';
                 const lsnmHTML = currentMachineDetails.lineStopNonMesin.map(ls => `
@@ -3033,7 +2946,7 @@
                         </div>
                         <div id="lsnm-details-${ls.id}" style="display: none; padding-left: 32px;">
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                                <input type="number" id="lsnm-duration-${ls.id}" min="0" step="0.1" placeholder="Duration (min) *" class="input-field" style="padding: 6px 10px;" oninput="updateCalculations()">
+                                <input type="number" id="lsnm-duration-${ls.id}" min="0" placeholder="Duration (min) *" class="input-field" style="padding: 6px 10px;" oninput="updateCalculations()">
                                 <input type="text" id="lsnm-action-${ls.id}" placeholder="Action *" class="input-field" style="padding: 6px 10px;">
                             </div>
                         </div>
@@ -3042,7 +2955,6 @@
                 document.getElementById('line-stop-non-mesin-list').innerHTML = lsnmHTML;
             }
             
-            // Render Minor Stop
             if (currentMachineDetails.minorStop.length > 0) {
                 document.getElementById('minor-stop-section').style.display = 'block';
                 const msHTML = currentMachineDetails.minorStop.map(ms => `
@@ -3062,25 +2974,57 @@
             updateCalculations();
         }
 
+        function validateODTInput(id) {
+            const checkbox = document.getElementById(`odt-check-${id}`);
+            const input = document.getElementById(`odt-time-${id}`);
+            const error = document.getElementById(`odt-error-${id}`);
+            
+            if (!checkbox || !input || !error) return true;
+            
+            if (checkbox.checked) {
+                const value = input.value.trim();
+                if (!value || isNaN(parseFloat(value)) || parseFloat(value) <= 0) {
+                    input.classList.add('odt-input-error');
+                    error.style.display = 'block';
+                    return false;
+                } else {
+                    input.classList.remove('odt-input-error');
+                    error.style.display = 'none';
+                    const odt = currentMachineDetails.odt.find(o => o.id === id);
+                    if (odt) {
+                        checkODTExceed(id, odt.standard_time);
+                    }
+                    return true;
+                }
+            }
+            
+            input.classList.remove('odt-input-error');
+            error.style.display = 'none';
+            return true;
+        }
+
         function toggleODT(id) {
             const checkbox = document.getElementById(`odt-check-${id}`);
             const input = document.getElementById(`odt-time-${id}`);
             const item = document.getElementById(`odt-${id}`);
+            const error = document.getElementById(`odt-error-${id}`);
             
             if (!checkbox || !input || !item) return;
             
             input.disabled = !checkbox.checked;
+            
             if (checkbox.checked) {
                 item.classList.add('active');
-                const odt = currentMachineDetails.odt.find(o => o.id === id);
-                if (odt) {
-                    checkODTExceed(id, odt.standard_time);
-                }
+                input.classList.remove('odt-input-error');
+                if (error) error.style.display = 'none';
+                setTimeout(() => input.focus(), 100);
             } else {
                 item.classList.remove('active');
                 item.classList.remove('exceed');
                 const warning = document.getElementById(`odt-exceed-warning-${id}`);
                 if (warning) warning.style.display = 'none';
+                if (error) error.style.display = 'none';
+                input.classList.remove('odt-input-error');
             }
             
             updateCalculations();
@@ -3169,8 +3113,8 @@
                         <button type="button" class="btn btn-danger" style="padding: 4px 8px; font-size: 12px; white-space: nowrap;" onclick="removeCustomLSM(${customLSMCounter})">Remove</button>
                     </div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
-                        <input type="text" id="custom-lsm-item-${customLSMCounter}" placeholder="Item Name *" class="input-field" style="padding: 6px 10px; text-transform: uppercase;">
-                        <input type="number" id="custom-lsm-duration-${customLSMCounter}" min="0" step="0.1" placeholder="Duration (min) *" class="input-field" style="padding: 6px 10px;" oninput="checkCustomLSMDuration(${customLSMCounter})">
+                        <input type="text" id="custom-lsm-item-${customLSMCounter}" placeholder="Item Name *" class="input-field" style="padding: 6px 10px;">
+                        <input type="number" id="custom-lsm-duration-${customLSMCounter}" min="0" placeholder="Duration (min) *" class="input-field" style="padding: 6px 10px;" oninput="checkCustomLSMDuration(${customLSMCounter})">
                     </div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
                         <input type="text" id="custom-lsm-action-${customLSMCounter}" placeholder="Action" class="input-field" style="padding: 6px 10px;">
@@ -3216,8 +3160,8 @@
                         <button type="button" class="btn btn-danger" style="padding: 4px 8px; font-size: 12px; white-space: nowrap;" onclick="removeCustomLSNM(${customLSNMCounter})">Remove</button>
                     </div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                        <input type="text" id="custom-lsnm-item-${customLSNMCounter}" placeholder="Item Name *" class="input-field" style="padding: 6px 10px; text-transform: uppercase;">
-                        <input type="number" id="custom-lsnm-duration-${customLSNMCounter}" min="0" step="0.1" placeholder="Duration (min) *" class="input-field" style="padding: 6px 10px;" oninput="updateCalculations()">
+                        <input type="text" id="custom-lsnm-item-${customLSNMCounter}" placeholder="Item Name *" class="input-field" style="padding: 6px 10px;">
+                        <input type="number" id="custom-lsnm-duration-${customLSNMCounter}" min="0" placeholder="Duration (min) *" class="input-field" style="padding: 6px 10px;" oninput="updateCalculations()">
                     </div>
                     <input type="text" id="custom-lsnm-action-${customLSNMCounter}" placeholder="Action *" class="input-field" style="margin-top: 8px; padding: 6px 10px;">
                 </div>
@@ -3243,7 +3187,7 @@
                         <button type="button" class="btn btn-danger" style="padding: 4px 8px; font-size: 12px; white-space: nowrap;" onclick="removeCustomMS(${customMSCounter})">Remove</button>
                     </div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                        <input type="text" id="custom-ms-item-${customMSCounter}" placeholder="Item Name *" class="input-field" style="padding: 6px 10px; text-transform: uppercase;">
+                        <input type="text" id="custom-ms-item-${customMSCounter}" placeholder="Item Name *" class="input-field" style="padding: 6px 10px;">
                         <input type="number" id="custom-ms-frequency-${customMSCounter}" min="0" placeholder="Frequency (count) *" class="input-field" style="padding: 6px 10px;">
                     </div>
                 </div>
@@ -3277,7 +3221,11 @@
                 return;
             }
             
-            // Collect ODT data
+            if (output === 0) {
+                const results = document.getElementById('calculated-results');
+                if (results) results.style.display = 'none';
+            }
+            
             const odtData = [];
             if (currentMachineDetails && currentMachineDetails.odt) {
                 currentMachineDetails.odt.forEach(odt => {
@@ -3286,7 +3234,7 @@
                     
                     const checked = checkbox.checked;
                     const input = document.getElementById(`odt-time-${odt.id}`);
-                    const actualTime = input?.value || 0;
+                    const actualTime = parseFloat(input?.value) || 0;
                     odtData.push({
                         name: odt.odt_name,
                         standardTime: odt.standard_time,
@@ -3296,7 +3244,6 @@
                 });
             }
             
-            // Collect Line Stop Mesin data
             const lineStopMesinData = [];
             if (currentMachineDetails && currentMachineDetails.lineStopMesin) {
                 currentMachineDetails.lineStopMesin.forEach(ls => {
@@ -3315,7 +3262,6 @@
                 });
             }
             
-            // Collect Custom Line Stop Mesin
             for (let i = 1; i <= customLSMCounter; i++) {
                 const itemEl = document.getElementById(`custom-lsm-item-${i}`);
                 if (itemEl && itemEl.value) {
@@ -3331,7 +3277,6 @@
                 }
             }
             
-            // Collect Line Stop Non Mesin data
             const lineStopNonMesinData = [];
             if (currentMachineDetails && currentMachineDetails.lineStopNonMesin) {
                 currentMachineDetails.lineStopNonMesin.forEach(ls => {
@@ -3348,7 +3293,6 @@
                 });
             }
             
-            // Collect Custom Line Stop Non Mesin
             for (let i = 1; i <= customLSNMCounter; i++) {
                 const itemEl = document.getElementById(`custom-lsnm-item-${i}`);
                 if (itemEl && itemEl.value) {
@@ -3374,7 +3318,6 @@
             
             const results = calculateOEE(formData);
             
-            // Display ODT Exceeds
             const odtExceedContainer = document.getElementById('odt-exceed-list');
             if (odtExceedContainer) {
                 if (results.odtExceeds.length > 0) {
@@ -3399,32 +3342,20 @@
                 }
             }
             
-            // Update target recommendation
             const targetText = document.getElementById('target-text');
             const targetDetails = document.getElementById('target-details');
             
             if (targetText && targetDetails) {
                 const targetOutput = Math.round(results.remainingTime * currentMachineData.target_per_minute);
-                if (currentMachineData.target_per_minute > 0) {
-                    targetText.innerHTML = `
-                        <strong style="font-size: 24px; color: var(--accent-primary); word-break: break-word;">${targetOutput.toLocaleString('id-ID')} units</strong>
-                    `;
-                    targetDetails.innerHTML = `
-                        📊 <strong>Calculation:</strong> ${results.remainingTime.toFixed(0)} minutes (available time) × ${currentMachineData.target_per_minute}/min (target per minute)<br>
-                        ⏱️ <strong>Available Time Breakdown:</strong> ${results.shiftMinutes} min (shift) - ${results.totalODT.toFixed(0)} min (ODT) - ${results.totalLineStopMesin.toFixed(0)} min (LS Mesin) - ${results.totalLineStopNonMesin.toFixed(0)} min (LS Non Mesin) = <strong>${results.remainingTime.toFixed(0)} min</strong>
-                    `;
-                } else {
-                    targetText.innerHTML = `
-                        <strong style="font-size: 20px; color: var(--text-secondary); word-break: break-word;">Target per minute = 0</strong>
-                    `;
-                    targetDetails.innerHTML = `
-                        📊 <strong>Machine ini tidak memiliki target output.</strong><br>
-                        ⏱️ <strong>Performance dan Quality akan dihitung sebagai 100%.</strong>
-                    `;
-                }
+                targetText.innerHTML = `
+                    <strong style="font-size: 24px; color: var(--accent-primary); word-break: break-word;">${targetOutput.toLocaleString('id-ID')} units</strong>
+                `;
+                targetDetails.innerHTML = `
+                    📊 <strong>Calculation:</strong> ${results.remainingTime.toFixed(0)} minutes (available time) × ${currentMachineData.target_per_minute}/min (target per minute)<br>
+                    ⏱️ <strong>Available Time Breakdown:</strong> ${results.shiftMinutes} min (shift) - ${results.totalODT.toFixed(0)} min (ODT) - ${results.totalLineStopMesin.toFixed(0)} min (LS Mesin) - ${results.totalLineStopNonMesin.toFixed(0)} min (LS Non Mesin) = <strong>${results.remainingTime.toFixed(0)} min</strong>
+                `;
             }
             
-            // Show calculated results
             const resultsElement = document.getElementById('calculated-results');
             if (resultsElement) {
                 resultsElement.style.display = 'block';
@@ -3479,14 +3410,8 @@
             const reject = parseFloat(document.getElementById('input-reject')?.value) || 0;
             const notes = document.getElementById('input-notes')?.value || '';
             
-            if (!date || !shift || !machineId || !pic || !productCode || !batchNumber) {
+            if (!date || !shift || !machineId || !pic || !productCode || !batchNumber || output === 0) {
                 showToast('Please fill all required fields', 'error');
-                return;
-            }
-            
-            // MODIFIKASI: Validasi output hanya jika target per minute > 0
-            if (currentMachineData && currentMachineData.target_per_minute > 0 && output === 0) {
-                showToast('Actual Output is required for machines with target per minute > 0', 'error');
                 return;
             }
             
@@ -3495,7 +3420,40 @@
                 return;
             }
             
-            // Collect all data
+            let hasODTValidationError = false;
+            let firstInvalidODTInput = null;
+            
+            if (currentMachineDetails && currentMachineDetails.odt) {
+                for (const odt of currentMachineDetails.odt) {
+                    const checkbox = document.getElementById(`odt-check-${odt.id}`);
+                    if (checkbox && checkbox.checked) {
+                        const input = document.getElementById(`odt-time-${odt.id}`);
+                        const actualTime = input?.value.trim();
+                        
+                        if (!actualTime || isNaN(parseFloat(actualTime)) || parseFloat(actualTime) <= 0) {
+                            hasODTValidationError = true;
+                            showToast(`ODT "${odt.odt_name}": Isi Actual Time ODT`, 'error');
+                            
+                            input.classList.add('odt-input-error');
+                            const error = document.getElementById(`odt-error-${odt.id}`);
+                            if (error) error.style.display = 'block';
+                            
+                            if (!firstInvalidODTInput) {
+                                firstInvalidODTInput = input;
+                            }
+                        }
+                    }
+                }
+            }
+            
+            if (hasODTValidationError) {
+                if (firstInvalidODTInput) {
+                    firstInvalidODTInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    firstInvalidODTInput.focus();
+                }
+                throw new Error('ODT validation failed');
+            }
+            
             const odtData = [];
             if (currentMachineDetails && currentMachineDetails.odt) {
                 currentMachineDetails.odt.forEach(odt => {
@@ -3503,14 +3461,17 @@
                     if (!checkbox) return;
                     
                     const checked = checkbox.checked;
-                    const input = document.getElementById(`odt-time-${odt.id}`);
-                    const actualTime = input?.value || 0;
-                    odtData.push({
-                        name: odt.odt_name,
-                        standardTime: odt.standard_time,
-                        actualTime: actualTime,
-                        checked: checked
-                    });
+                    if (checked) {
+                        const input = document.getElementById(`odt-time-${odt.id}`);
+                        const actualTime = parseFloat(input?.value) || 0;
+                        
+                        odtData.push({
+                            name: odt.odt_name,
+                            standardTime: odt.standard_time,
+                            actualTime: actualTime,
+                            checked: checked
+                        });
+                    }
                 });
             }
             
@@ -3538,7 +3499,6 @@
                 });
             }
             
-            // Custom LSM
             for (let i = 1; i <= customLSMCounter; i++) {
                 const itemEl = document.getElementById(`custom-lsm-item-${i}`);
                 if (itemEl && itemEl.value) {
@@ -3583,7 +3543,6 @@
                 });
             }
             
-            // Custom LSNM
             for (let i = 1; i <= customLSNMCounter; i++) {
                 const itemEl = document.getElementById(`custom-lsnm-item-${i}`);
                 if (itemEl && itemEl.value) {
@@ -3600,7 +3559,6 @@
                 }
             }
             
-            // Collect Minor Stop data
             const minorStopData = [];
             let totalMinorStopCount = 0;
             
@@ -3621,7 +3579,6 @@
                 });
             }
             
-            // Collect Custom Minor Stop
             for (let i = 1; i <= customMSCounter; i++) {
                 const itemEl = document.getElementById(`custom-ms-item-${i}`);
                 if (itemEl && itemEl.value) {
@@ -3650,7 +3607,6 @@
             
             const results = calculateOEE(formData);
             
-            // Add ODT exceeds to lineStopNonMesinData before saving
             const finalLineStopNonMesinData = [...lineStopNonMesinData, ...results.odtExceeds];
             
             const recordData = {
@@ -3688,7 +3644,7 @@
                 resetInputForm();
             } catch (error) {
                 hideLoading();
-                if (error.message !== 'Validation failed') {
+                if (error.message !== 'Validation failed' && error.message !== 'ODT validation failed') {
                     showToast('Failed to save OEE data', 'error');
                 }
             }
@@ -3710,9 +3666,7 @@
             document.getElementById('line-stop-non-mesin-section').style.display = 'none';
             document.getElementById('minor-stop-section').style.display = 'none';
             document.getElementById('calculated-results').style.display = 'none';
-            document.getElementById('zero-target-info').style.display = 'none';
             
-            // Reset target to default message
             const targetText = document.getElementById('target-text');
             const targetDetails = document.getElementById('target-details');
             if (targetText) {
@@ -3737,20 +3691,6 @@
             customLSMCounter = 0;
             customLSNMCounter = 0;
             customMSCounter = 0;
-            
-            // Remove disabled class from output fields
-            const outputField = document.getElementById('input-output');
-            const rejectField = document.getElementById('input-reject');
-            if (outputField) {
-                outputField.classList.remove('disabled-for-zero-target');
-                outputField.disabled = false;
-                outputField.placeholder = 'Required if target per minute > 0';
-            }
-            if (rejectField) {
-                rejectField.classList.remove('disabled-for-zero-target');
-                rejectField.disabled = false;
-                rejectField.placeholder = 'Required if target per minute > 0';
-            }
             
             currentMachineData = null;
             currentMachineDetails = null;
@@ -3802,8 +3742,8 @@
                         </select>
                     </div>
                     <div>
-                        <label class="label">Target per Minute</label>
-                        <input type="number" id="modal-machine-target" min="0" step="0.01" class="input-field" value="0">
+                        <label class="label">Target per Minute *</label>
+                        <input type="number" id="modal-machine-target" min="0" step="0.01" class="input-field">
                     </div>
                 </div>
                 
@@ -3878,7 +3818,7 @@
                         </select>
                     </div>
                     <div>
-                        <label class="label">Target per Minute</label>
+                        <label class="label">Target per Minute *</label>
                         <input type="number" id="modal-machine-target" value="${machine.target_per_minute}" min="0" step="0.01" class="input-field">
                     </div>
                 </div>
@@ -3962,19 +3902,17 @@
         }
 
         function renderMachineFormLists() {
-            // ODT List
             const odtList = document.getElementById('modal-odt-list');
             if (odtList) {
                 odtList.innerHTML = machineFormData.odtItems.map((item, i) => `
                     <div style="display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap;">
                         <input type="text" value="${item.name}" placeholder="ODT Name" class="input-field" style="flex: 2; min-width: 150px; text-transform: uppercase;" onchange="machineFormData.odtItems[${i}].name = this.value.toUpperCase()">
-                        <input type="number" value="${item.time}" min="0" step="0.1" placeholder="Minutes" class="input-field" style="flex: 1; min-width: 100px;" onchange="machineFormData.odtItems[${i}].time = parseFloat(this.value)">
+                        <input type="number" value="${item.time}" min="0" placeholder="Minutes" class="input-field" style="flex: 1; min-width: 100px;" onchange="machineFormData.odtItems[${i}].time = parseFloat(this.value)">
                         <button type="button" class="btn btn-danger" style="padding: 10px; min-width: 50px;" onclick="removeODTItem(${i})">✕</button>
                     </div>
                 `).join('');
             }
             
-            // LSM List
             const lsmList = document.getElementById('modal-lsm-list');
             if (lsmList) {
                 lsmList.innerHTML = machineFormData.lsmItems.map((item, i) => `
@@ -3985,7 +3923,6 @@
                 `).join('');
             }
             
-            // LSNM List
             const lsnmList = document.getElementById('modal-lsnm-list');
             if (lsnmList) {
                 lsnmList.innerHTML = machineFormData.lsnmItems.map((item, i) => `
@@ -3996,7 +3933,6 @@
                 `).join('');
             }
             
-            // MS List
             const msList = document.getElementById('modal-ms-list');
             if (msList) {
                 msList.innerHTML = machineFormData.msItems.map((item, i) => `
@@ -4014,7 +3950,7 @@
             const target = parseFloat(document.getElementById('modal-machine-target')?.value) || 0;
             const pic = document.getElementById('modal-machine-pic')?.value.toUpperCase() || '';
             
-            if (!machineName || !area) {
+            if (!machineName || !area || target === 0) {
                 showToast('Please fill all required fields', 'error');
                 return;
             }
@@ -4118,7 +4054,6 @@
             try {
                 const delimiter = '\t';
                 
-                // Headers
                 const headers = [
                     'Date', 'Shift', 'Machine', 'PIC', 'Product Code', 'Batch Number',
                     'Actual Output', 'Reject', 'Minor Stop Count',
@@ -4213,7 +4148,6 @@
                 
                 const config = defaultConfig;
                 
-                // Title
                 doc.setFontSize(18);
                 doc.setFont(undefined, 'bold');
                 doc.text(config.system_title, 14, 15);
@@ -4226,7 +4160,6 @@
                 doc.text(`Export Period: ${new Date(startDate).toLocaleDateString('id-ID')} - ${new Date(endDate).toLocaleDateString('id-ID')}`, 14, 28);
                 doc.text(`Generated: ${new Date().toLocaleDateString('id-ID')} ${new Date().toLocaleTimeString('id-ID')}`, 14, 33);
                 
-                // Summary Statistics
                 const avgOEEActual = records.length > 0 ? records.reduce((sum, r) => sum + (r.oee_actual || 0), 0) / records.length : 0;
                 const avgOEE365 = records.length > 0 ? records.reduce((sum, r) => sum + (r.oee_365 || 0), 0) / records.length : 0;
                 const totalOutput = records.reduce((sum, r) => sum + (r.actual_output || 0), 0);
@@ -4234,7 +4167,6 @@
                 doc.setFontSize(9);
                 doc.text(`Total Records: ${records.length} | Avg OEE Actual: ${avgOEEActual.toFixed(1)}% | Avg OEE 365: ${avgOEE365.toFixed(1)}% | Total Output: ${totalOutput.toLocaleString('id-ID')}`, 14, 38);
                 
-                // Table data
                 const tableData = records.map(r => {
                     return [
                         r.date ? new Date(r.date).toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit' }) : '',
@@ -4308,7 +4240,6 @@
         function navigateTo(page) {
             currentPage = page;
             
-            // Lock management when navigating away
             if (currentPage !== 'management') {
                 isManagementUnlocked = false;
             }
@@ -4321,13 +4252,10 @@
         // =============================================
         async function initializeApp() {
             try {
-                // Initialize theme first
                 initializeTheme();
                 
-                // Show initial loading
                 showLoading('Connecting to database...');
                 
-                // Load initial data
                 await Promise.all([
                     loadMachines(),
                     loadOEERecords()
@@ -4336,7 +4264,6 @@
                 hideLoading();
                 renderApp();
                 
-                // Auto-refresh data every 30 seconds
                 setInterval(async () => {
                     await loadOEERecords();
                     if (currentPage === 'dashboard') {
@@ -4349,7 +4276,6 @@
                 hideLoading();
                 showToast('Failed to initialize application', 'error');
                 
-                // Show error screen
                 const app = document.getElementById('app-wrapper');
                 app.innerHTML = `
                     <div style="display: flex; align-items: center; justify-content: center; height: 100vh; flex-direction: column; gap: 16px; text-align: center; padding: 20px;">
@@ -4361,7 +4287,6 @@
             }
         }
 
-        // Start the application
         document.addEventListener('DOMContentLoaded', initializeApp);
     </script>
 </body>
