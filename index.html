@@ -517,6 +517,27 @@
             word-break: break-word !important;
         }
         
+        .chart-total-badge {
+            position: absolute;
+            top: -15px;
+            right: 20px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 700;
+            box-shadow: 0 4px 12px rgba(102, 125, 234, 0.3);
+            z-index: 10;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .chart-wrapper {
+            position: relative;
+        }
+        
         @media (min-width: 768px) and (max-width: 1024px) {
             .container-main {
                 padding: 20px;
@@ -612,6 +633,13 @@
                 padding-right: 40px;
             }
             
+            .chart-total-badge {
+                top: -12px;
+                right: 15px;
+                padding: 6px 12px;
+                font-size: 12px;
+            }
+            
             table {
                 min-width: 1100px;
                 font-size: 13px;
@@ -690,6 +718,13 @@
             .chart-container-horizontal {
                 height: 300px;
                 padding-right: 30px;
+            }
+            
+            .chart-total-badge {
+                top: -10px;
+                right: 10px;
+                padding: 5px 10px;
+                font-size: 11px;
             }
             
             table {
@@ -816,6 +851,13 @@
                 padding-right: 25px;
             }
             
+            .chart-total-badge {
+                top: -8px;
+                right: 8px;
+                padding: 4px 8px;
+                font-size: 10px;
+            }
+            
             table {
                 min-width: 1200px;
                 font-size: 11px;
@@ -929,6 +971,13 @@
             .chart-container-horizontal {
                 height: 250px;
                 padding-right: 20px;
+            }
+            
+            .chart-total-badge {
+                top: -6px;
+                right: 6px;
+                padding: 3px 6px;
+                font-size: 9px;
             }
             
             table {
@@ -1585,8 +1634,11 @@
                         </div>
                         <div class="card">
                             <div class="card-header">⏱️ ODT Top 10 (menit)</div>
-                            <div class="chart-container-horizontal">
-                                <canvas id="chart-odt"></canvas>
+                            <div class="chart-wrapper">
+                                <div id="odt-total-badge" class="chart-total-badge">📊 Total: 0 menit</div>
+                                <div class="chart-container-horizontal">
+                                    <canvas id="chart-odt"></canvas>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1594,22 +1646,31 @@
                     <div class="grid-2">
                         <div class="card">
                             <div class="card-header">🔧 Line Stop Mesin Top 10 (menit)</div>
-                            <div class="chart-container-horizontal">
-                                <canvas id="chart-ls-mesin"></canvas>
+                            <div class="chart-wrapper">
+                                <div id="lsm-total-badge" class="chart-total-badge">🔧 Total: 0 menit</div>
+                                <div class="chart-container-horizontal">
+                                    <canvas id="chart-ls-mesin"></canvas>
+                                </div>
                             </div>
                         </div>
                         <div class="card">
                             <div class="card-header">⚠️ Line Stop Non Mesin Top 10 (menit)</div>
-                            <div class="chart-container-horizontal">
-                                <canvas id="chart-ls-non-mesin"></canvas>
+                            <div class="chart-wrapper">
+                                <div id="lsnm-total-badge" class="chart-total-badge">⚠️ Total: 0 menit</div>
+                                <div class="chart-container-horizontal">
+                                    <canvas id="chart-ls-non-mesin"></canvas>
+                                </div>
                             </div>
                         </div>
                     </div>
                     
                     <div class="card">
                         <div class="card-header">⏸️ Minor Stop Top 10 (kali)</div>
-                        <div class="chart-container-horizontal">
-                            <canvas id="chart-minor-stop"></canvas>
+                        <div class="chart-wrapper">
+                            <div id="ms-total-badge" class="chart-total-badge">⏸️ Total: 0 kali</div>
+                            <div class="chart-container-horizontal">
+                                <canvas id="chart-minor-stop"></canvas>
+                            </div>
                         </div>
                     </div>
                     
@@ -2351,6 +2412,13 @@
                 
                 if (sorted.length === 0) return;
                 
+                // Hitung total ODT
+                const totalODT = Object.values(odtStats).reduce((sum, val) => sum + val, 0);
+                const odtTotalBadge = document.getElementById('odt-total-badge');
+                if (odtTotalBadge) {
+                    odtTotalBadge.innerHTML = `📊 Total: ${totalODT.toFixed(0)} menit`;
+                }
+                
                 const labels = sorted.map(s => {
                     const name = s[0];
                     return name.length > 25 ? name.substring(0, 22) + '...' : name;
@@ -2479,6 +2547,13 @@
                     .slice(0, 10);
                 
                 if (sorted.length === 0) return;
+                
+                // Hitung total Line Stop Mesin
+                const totalLSM = Object.values(lsStats).reduce((sum, val) => sum + val, 0);
+                const lsmTotalBadge = document.getElementById('lsm-total-badge');
+                if (lsmTotalBadge) {
+                    lsmTotalBadge.innerHTML = `🔧 Total: ${totalLSM.toFixed(0)} menit`;
+                }
                 
                 const labels = sorted.map(s => {
                     const name = s[0];
@@ -2609,6 +2684,13 @@
                 
                 if (sorted.length === 0) return;
                 
+                // Hitung total Line Stop Non Mesin
+                const totalLSNM = Object.values(lsStats).reduce((sum, val) => sum + val, 0);
+                const lsnmTotalBadge = document.getElementById('lsnm-total-badge');
+                if (lsnmTotalBadge) {
+                    lsnmTotalBadge.innerHTML = `⚠️ Total: ${totalLSNM.toFixed(0)} menit`;
+                }
+                
                 const labels = sorted.map(s => {
                     const name = s[0];
                     return name.length > 25 ? name.substring(0, 22) + '...' : name;
@@ -2737,6 +2819,13 @@
                     .slice(0, 10);
                 
                 if (sorted.length === 0) return;
+                
+                // Hitung total Minor Stop
+                const totalMS = Object.values(msStats).reduce((sum, val) => sum + val, 0);
+                const msTotalBadge = document.getElementById('ms-total-badge');
+                if (msTotalBadge) {
+                    msTotalBadge.innerHTML = `⏸️ Total: ${totalMS.toFixed(0)} kali`;
+                }
                 
                 const labels = sorted.map(s => {
                     const name = s[0];
