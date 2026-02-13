@@ -482,7 +482,6 @@
             font-weight: 600;
         }
         
-        /* Text wrapping and overflow fixes */
         .wrap-text {
             white-space: normal !important;
             word-wrap: break-word !important;
@@ -515,9 +514,9 @@
             min-width: 120px !important;
             white-space: normal !important;
             word-wrap: break-word !important;
+            word-break: break-word !important;
         }
         
-        /* Responsive styles */
         @media (min-width: 768px) and (max-width: 1024px) {
             .container-main {
                 padding: 20px;
@@ -955,7 +954,6 @@
             }
         }
         
-        /* Style untuk field actual time yang lebih kecil */
         .odt-actual-time {
             width: 90px !important;
             padding: 4px 6px !important;
@@ -963,7 +961,6 @@
             text-align: center !important;
         }
         
-        /* Style untuk field yang disable ketika target per minute = 0 */
         .disabled-for-zero-target {
             background-color: rgba(239, 239, 239, 0.3) !important;
             color: var(--text-secondary) !important;
@@ -973,7 +970,7 @@
 </head>
 <body class="h-full">
     <div id="app-wrapper" class="h-full w-full"></div>
-    <button class="theme-toggle" onclick="toggleTheme()" id="theme-toggle-btn" aria-label="Toggle dark mode"> 🌙 </button>
+    <button class="theme-toggle" id="theme-toggle-btn" onclick="toggleTheme()" aria-label="Toggle dark mode"> 🌙 </button>
 
     <script>
         // =============================================
@@ -1037,22 +1034,21 @@
         };
 
         // =============================================
-        // UTILITY FUNCTIONS - TANGGAL BULAN INI
+        // UTILITY FUNCTIONS
         // =============================================
         function getCurrentMonthStart() {
             const date = new Date();
-            date.setDate(1); // Set ke tanggal 1
+            date.setDate(1);
             return date.toISOString().split('T')[0];
         }
         
         function getCurrentMonthEnd() {
             const date = new Date();
-            date.setMonth(date.getMonth() + 1); // Ke bulan depan
-            date.setDate(0); // Set ke tanggal terakhir bulan ini
+            date.setMonth(date.getMonth() + 1);
+            date.setDate(0);
             return date.toISOString().split('T')[0];
         }
 
-        // Filter state - DIMULAI DARI AWAL BULAN HINGGA AKHIR BULAN
         let filters = {
             startDate: getCurrentMonthStart(),
             endDate: getCurrentMonthEnd(),
@@ -1176,7 +1172,6 @@
                 
                 const machineId = machine.id;
                 
-                // Save ODT items
                 if (odtItems.length > 0) {
                     const odtData = odtItems.map(item => ({
                         machine_id: machineId,
@@ -1186,7 +1181,6 @@
                     await db.from('machine_odt').insert(odtData);
                 }
                 
-                // Save Line Stop Mesin items
                 if (lineStopMesinItems.length > 0) {
                     const lsmData = lineStopMesinItems.map(item => ({
                         machine_id: machineId,
@@ -1195,7 +1189,6 @@
                     await db.from('machine_line_stop_mesin').insert(lsmData);
                 }
                 
-                // Save Line Stop Non Mesin items
                 if (lineStopNonMesinItems.length > 0) {
                     const lsnmData = lineStopNonMesinItems.map(item => ({
                         machine_id: machineId,
@@ -1204,7 +1197,6 @@
                     await db.from('machine_line_stop_non_mesin').insert(lsnmData);
                 }
                 
-                // Save Minor Stop items
                 if (minorStopItems.length > 0) {
                     const msData = minorStopItems.map(item => ({
                         machine_id: machineId,
@@ -1222,7 +1214,6 @@
 
         async function updateMachine(machineId, machineData, odtItems, lineStopMesinItems, lineStopNonMesinItems, minorStopItems) {
             try {
-                // Update machine
                 const { error: machineError } = await db
                     .from('machines')
                     .update(machineData)
@@ -1230,7 +1221,6 @@
                 
                 if (machineError) throw machineError;
                 
-                // Delete existing related data
                 await Promise.all([
                     db.from('machine_odt').delete().eq('machine_id', machineId),
                     db.from('machine_line_stop_mesin').delete().eq('machine_id', machineId),
@@ -1238,7 +1228,6 @@
                     db.from('machine_minor_stop').delete().eq('machine_id', machineId)
                 ]);
                 
-                // Insert new data
                 if (odtItems.length > 0) {
                     const odtData = odtItems.map(item => ({
                         machine_id: machineId,
@@ -1296,7 +1285,6 @@
 
         async function saveOEERecord(recordData) {
             try {
-                // Convert complex objects to JSON strings for Supabase
                 const cleanedData = {
                     ...recordData,
                     odt_data: JSON.stringify(recordData.odt_data || []),
@@ -1323,13 +1311,12 @@
         }
 
         // =============================================
-        // CALCULATION FUNCTIONS - MODIFIED FOR TARGET PER MINUTE 0
+        // CALCULATION FUNCTIONS
         // =============================================
         function calculateOEE(formData) {
             const shiftMinutes = SHIFTS[formData.shift]?.minutes || 0;
             const targetPerMinute = formData.targetPerMinute || 0;
             
-            // Jika shift minutes = 0, semua nilai 0
             if (!shiftMinutes) {
                 return {
                     availabilityActual: 0,
@@ -1347,7 +1334,6 @@
                 };
             }
             
-            // Calculate ODT with exceed logic
             let totalODT = 0;
             let odtExceeds = [];
             
@@ -1372,7 +1358,6 @@
                 });
             }
             
-            // Calculate total Line Stop Mesin
             let totalLineStopMesin = 0;
             if (formData.lineStopMesinData) {
                 formData.lineStopMesinData.forEach(ls => {
@@ -1380,7 +1365,6 @@
                 });
             }
             
-            // Calculate total Line Stop Non Mesin (including ODT exceeds)
             let totalLineStopNonMesin = 0;
             if (formData.lineStopNonMesinData) {
                 formData.lineStopNonMesinData.forEach(ls => {
@@ -1388,26 +1372,18 @@
                 });
             }
             
-            // Add ODT exceeds to Line Stop Non Mesin
-            odtExceeds.forEach(exceed => {
-                totalLineStopNonMesin += exceed.duration;
-            });
+            totalLineStopNonMesin += odtExceeds.reduce((sum, exceed) => sum + exceed.duration, 0);
             
-            // Availability Actual: (jam kerja - odt - (line stop mesin + line stop non mesin))/(jam kerja - odt)
             const availabilityActual = shiftMinutes - totalODT > 0 
                 ? ((shiftMinutes - totalODT - (totalLineStopMesin + totalLineStopNonMesin)) / (shiftMinutes - totalODT)) * 100 
                 : 0;
             
-            // Availability 365: (jam kerja - odt - (line stop mesin + line stop non mesin))/jam kerja
             const availability365 = shiftMinutes > 0 
                 ? ((shiftMinutes - totalODT - (totalLineStopMesin + totalLineStopNonMesin)) / shiftMinutes) * 100 
                 : 0;
             
-            // MODIFIKASI UTAMA: Jika target per minute = 0, maka performance = 100%
-            let performance = 100; // Default 100% jika target per minute 0
-            
+            let performance = 100;
             if (targetPerMinute > 0) {
-                // Hitung performance hanya jika target per minute > 0
                 const availableTimeActual = shiftMinutes - totalODT - totalLineStopMesin - totalLineStopNonMesin;
                 const idealOutput = availableTimeActual * targetPerMinute;
                 if (idealOutput > 0) {
@@ -1417,20 +1393,14 @@
                 }
             }
             
-            // MODIFIKASI UTAMA: Jika target per minute = 0, maka quality = 100%
-            let quality = 100; // Default 100% jika target per minute 0
-            
+            let quality = 100;
             if (targetPerMinute > 0) {
-                // Hitung quality hanya jika target per minute > 0
                 quality = formData.actualOutput > 0 
                     ? ((formData.actualOutput - formData.reject) / formData.actualOutput) * 100 
                     : 0;
             }
             
-            // OEE Actual
             const oeeActual = (availabilityActual * performance * quality) / 10000;
-            
-            // OEE 365
             const oee365 = (availability365 * performance * quality) / 10000;
             
             return {
@@ -1506,22 +1476,18 @@
         function renderDashboard() {
             const filtered = getFilteredRecords();
             
-            // Calculate averages
             const avgOEEActual = filtered.length > 0 ? filtered.reduce((sum, r) => sum + (r.oee_actual || 0), 0) / filtered.length : 0;
             const avgOEE365 = filtered.length > 0 ? filtered.reduce((sum, r) => sum + (r.oee_365 || 0), 0) / filtered.length : 0;
             const totalOutput = filtered.reduce((sum, r) => sum + (r.actual_output || 0), 0);
             
-            // Get unique PICs and machines
             const uniquePICs = [...new Set(allOEERecords.map(r => r.pic).filter(Boolean))];
             const uniqueMachines = [...new Set(allOEERecords.map(r => r.machine_name).filter(Boolean))];
             
-            // Format dates for display
             const startDateDisplay = new Date(filters.startDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'long' });
             const endDateDisplay = new Date(filters.endDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
             
             return `
                 <div class="container-main">
-                    <!-- Filters -->
                     <div class="card">
                         <div class="card-header">🔍 Filter Data</div>
                         <div class="filter-section">
@@ -1568,7 +1534,6 @@
                         </div>
                     </div>
                     
-                    <!-- Scorecards -->
                     <div class="card">
                         <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; margin-bottom: 24px;">
                             <div class="scorecard ${avgOEEActual >= 88 ? 'good' : 'bad'}">
@@ -1596,7 +1561,6 @@
                         </div>
                     </div>
                     
-                    <!-- Charts Row 1 -->
                     <div class="grid-2">
                         <div class="card">
                             <div class="card-header">📈 OEE Trend (Oldest to Newest)</div>
@@ -1612,7 +1576,6 @@
                         </div>
                     </div>
                     
-                    <!-- Charts Row 2 -->
                     <div class="grid-2">
                         <div class="card">
                             <div class="card-header">📊 A-P-Q-A365 Breakdown</div>
@@ -1628,7 +1591,6 @@
                         </div>
                     </div>
                     
-                    <!-- Charts Row 3 -->
                     <div class="grid-2">
                         <div class="card">
                             <div class="card-header">🔧 Line Stop Mesin Top 10 (menit)</div>
@@ -1644,7 +1606,6 @@
                         </div>
                     </div>
                     
-                    <!-- Minor Stop Chart -->
                     <div class="card">
                         <div class="card-header">⏸️ Minor Stop Top 10 (kali)</div>
                         <div class="chart-container-horizontal">
@@ -1652,7 +1613,6 @@
                         </div>
                     </div>
                     
-                    <!-- Operator Performance -->
                     <div class="card">
                         <div class="card-header">👨‍🔧 Operator Performance</div>
                         <div class="table-wrapper">
@@ -1663,7 +1623,6 @@
                                         <th class="nowrap">Avg OEE Actual</th>
                                         <th class="nowrap">Total Output</th>
                                         <th class="nowrap">Target Output</th>
-                                        <th class="nowrap">Achievement</th>
                                         <th class="nowrap">Records</th>
                                     </tr>
                                 </thead>
@@ -1674,7 +1633,6 @@
                         </div>
                     </div>
                     
-                    <!-- OEE History -->
                     <div class="card">
                         <div class="card-header">📋 OEE History</div>
                         <div class="table-wrapper">
@@ -1685,7 +1643,6 @@
                                         <th class="nowrap">Shift</th>
                                         <th class="nowrap">Machine</th>
                                         <th class="nowrap">PIC</th>
-                                        <th class="nowrap">Product</th>
                                         <th class="nowrap">Batch</th>
                                         <th class="nowrap">Output</th>
                                         <th class="nowrap">Reject</th>
@@ -1725,12 +1682,10 @@
                 picStats[r.pic].totalOEE += r.oee_actual || 0;
                 picStats[r.pic].totalOutput += r.actual_output || 0;
                 
-                // Calculate target output for this record
                 const shiftMinutes = SHIFTS[r.shift]?.minutes || 0;
                 const machine = allMachines.find(m => m.id === r.machine_id);
                 const targetPerMinute = machine?.target_per_minute || 0;
                 
-                // Calculate ODT, Line Stop Mesin, Line Stop Non Mesin
                 let totalODT = 0;
                 try {
                     const odtData = typeof r.odt_data === 'string' ? JSON.parse(r.odt_data) : (r.odt_data || []);
@@ -1766,25 +1721,21 @@
                 }
                 
                 const availableTime = shiftMinutes - totalODT - totalLSM - totalLSNM;
-                
-                // Jika target per minute = 0, maka target output = 0 (tidak ada target)
                 const targetOutput = targetPerMinute > 0 ? availableTime * targetPerMinute : 0;
                 
                 picStats[r.pic].totalTargetOutput += targetOutput;
                 picStats[r.pic].count += 1;
             });
             
-            // Sort by achievement (descending)
             const sorted = Object.entries(picStats)
                 .map(([pic, stats]) => ({
                     pic,
                     avgOEE: stats.totalOEE / stats.count,
                     totalOutput: stats.totalOutput,
                     totalTargetOutput: stats.totalTargetOutput,
-                    achievement: stats.totalTargetOutput > 0 ? (stats.totalOutput / stats.totalTargetOutput) * 100 : (stats.totalTargetOutput === 0 ? 100 : 0),
                     count: stats.count
                 }))
-                .sort((a, b) => b.achievement - a.achievement);
+                .sort((a, b) => b.avgOEE - a.avgOEE);
             
             return sorted.map(s => `
                 <tr>
@@ -1792,7 +1743,6 @@
                     <td class="${s.avgOEE >= 88 ? 'status-good' : 'status-bad'} wrap-text">${s.avgOEE.toFixed(1)}%</td>
                     <td class="wrap-text">${s.totalOutput.toLocaleString('id-ID')}</td>
                     <td class="wrap-text">${Math.round(s.totalTargetOutput).toLocaleString('id-ID')}</td>
-                    <td class="${s.achievement >= 100 ? 'status-good' : 'status-bad'} wrap-text">${s.achievement.toFixed(1)}%</td>
                     <td class="wrap-text">${s.count}</td>
                 </tr>
             `).join('');
@@ -1800,11 +1750,10 @@
 
         function generateOEEHistoryRows(records) {
             if (records.length === 0) {
-                return '<tr><td colspan="15" style="text-align: center; color: var(--text-secondary); padding: 40px;">No records found for this period</td></tr>';
+                return '<tr><td colspan="14" style="text-align: center; color: var(--text-secondary); padding: 40px;">No records found for this period</td></tr>';
             }
             
             return records.map(r => {
-                // Extract WR numbers from Line Stop Mesin data
                 let wrNumbers = [];
                 try {
                     if (r.line_stop_mesin_data) {
@@ -1829,7 +1778,6 @@
                         <td class="wrap-text">${r.shift || '-'}</td>
                         <td class="wrap-text"><strong>${r.machine_name || '-'}</strong></td>
                         <td class="wrap-text">${r.pic || '-'}</td>
-                        <td class="wrap-text">${r.product_code || '-'}</td>
                         <td class="wrap-text">${r.batch_number || '-'}</td>
                         <td class="wrap-text">${(r.actual_output || 0).toLocaleString('id-ID')}</td>
                         <td class="wrap-text">${r.reject || 0}</td>
@@ -1863,7 +1811,6 @@
                     <div class="card">
                         <div class="card-header">✏️ Input OEE Data</div>
                         
-                        <!-- Basic Info -->
                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-bottom: 24px;">
                             <div>
                                 <label class="label">Tanggal *</label>
@@ -1888,16 +1835,11 @@
                                 <input type="text" id="input-pic" class="input-field" style="text-transform: uppercase;">
                             </div>
                             <div>
-                                <label class="label">Kode Produk *</label>
-                                <input type="text" id="input-product" class="input-field" style="text-transform: uppercase;">
-                            </div>
-                            <div>
                                 <label class="label">Nomor Batch *</label>
                                 <input type="text" id="input-batch" class="input-field" style="text-transform: uppercase;">
                             </div>
                         </div>
                         
-                        <!-- ODT Section -->
                         <div id="odt-section" style="margin-bottom: 24px; display: none;">
                             <h4 style="font-weight: 700; margin-bottom: 12px; color: var(--text-primary);">⏱️ ODT (Operational Downtime)</h4>
                             <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px;">
@@ -1906,7 +1848,6 @@
                             <div id="odt-list"></div>
                         </div>
                         
-                        <!-- Line Stop Mesin Section -->
                         <div id="line-stop-mesin-section" style="margin-bottom: 24px; display: none;">
                             <h4 style="font-weight: 700; margin-bottom: 12px; color: var(--text-primary);">🔧 Line Stop Mesin</h4>
                             <div id="line-stop-mesin-list"></div>
@@ -1914,18 +1855,15 @@
                             <div id="custom-line-stop-mesin-container"></div>
                         </div>
                         
-                        <!-- Line Stop Non Mesin Section -->
                         <div id="line-stop-non-mesin-section" style="margin-bottom: 24px; display: none;">
                             <h4 style="font-weight: 700; margin-bottom: 12px; color: var(--text-primary);">⚠️ Line Stop Non Mesin</h4>
                             <div id="line-stop-non-mesin-list"></div>
                             <button type="button" class="btn btn-secondary" style="margin-top: 12px;" onclick="addCustomLineStopNonMesin()">➕ Add Custom Line Stop Non Mesin</button>
                             <div id="custom-line-stop-non-mesin-container"></div>
                             
-                            <!-- ODT Exceed List -->
                             <div id="odt-exceed-list" style="margin-top: 16px;"></div>
                         </div>
                         
-                        <!-- Minor Stop Section -->
                         <div id="minor-stop-section" style="margin-bottom: 24px; display: none;">
                             <h4 style="font-weight: 700; margin-bottom: 12px; color: var(--text-primary);">⏸️ Minor Stop</h4>
                             <div id="minor-stop-list"></div>
@@ -1933,7 +1871,6 @@
                             <div id="custom-minor-stop-container"></div>
                         </div>
                         
-                        <!-- Output -->
                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-bottom: 24px;">
                             <div>
                                 <label class="label">Actual Output</label>
@@ -1945,7 +1882,6 @@
                             </div>
                         </div>
                         
-                        <!-- Info untuk mesin dengan target per minute = 0 -->
                         <div id="zero-target-info" style="display: none; background: rgba(102, 125, 234, 0.1); padding: 16px; border-radius: 8px; margin-bottom: 24px; border: 2px solid var(--accent-primary);">
                             <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
                                 <span style="color: var(--accent-primary); font-size: 20px;">ℹ️</span>
@@ -1957,7 +1893,6 @@
                             </p>
                         </div>
                         
-                        <!-- Target Recommendation -->
                         <div id="target-recommendation" class="target-box">
                             <h4 style="font-weight: 800; margin-bottom: 12px; color: var(--accent-primary); font-size: 18px; display: flex; align-items: center; gap: 8px;">
                                 🎯 Target Output Recommendation
@@ -1970,7 +1905,6 @@
                             </div>
                         </div>
                         
-                        <!-- Calculated Results -->
                         <div id="calculated-results" style="background: var(--bg-secondary); padding: 20px; border-radius: 12px; margin-bottom: 24px; display: none;">
                             <h4 style="font-weight: 700; margin-bottom: 16px; color: var(--text-primary);">🧮 Calculated Results</h4>
                             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px;">
@@ -2001,13 +1935,11 @@
                             </div>
                         </div>
                         
-                        <!-- Notes -->
                         <div style="margin-bottom: 24px;">
                             <label class="label">Catatan</label>
                             <textarea id="input-notes" rows="3" class="input-field" placeholder="Additional notes (optional)"></textarea>
                         </div>
                         
-                        <!-- Actions -->
                         <div style="display: flex; gap: 16px; flex-wrap: wrap;">
                             <button class="btn btn-primary" onclick="saveOEEData()" style="flex: 1; min-width: 200px;">💾 Simpan Data OEE</button>
                             <button class="btn btn-secondary" onclick="resetInputForm()" style="flex: 1; min-width: 200px;">🔄 Reset Form</button>
@@ -2111,12 +2043,11 @@
         }
 
         // =============================================
-        // CHART RENDERING
+        // CHART RENDERING FUNCTIONS
         // =============================================
         function renderCharts() {
             const filtered = getFilteredRecords();
             
-            // Destroy existing charts
             Object.values(chartInstances).forEach(chart => {
                 try {
                     if (chart && chart.destroy) chart.destroy();
@@ -2126,7 +2057,6 @@
             });
             chartInstances = {};
             
-            // Render all charts
             renderTrendChart(filtered);
             renderPerMachineChart(filtered);
             renderAPQChart(filtered);
@@ -2283,11 +2213,9 @@
                                     const barWidth = bar.width;
                                     const barHeight = bar.height;
                                     
-                                    // Hitung posisi tengah bar
                                     const centerX = x;
                                     const centerY = y + (barHeight / 2);
                                     
-                                    // Tampilkan label di tengah bar
                                     ctx.fillStyle = '#ffffff';
                                     ctx.font = 'bold 11px Arial';
                                     ctx.textAlign = 'center';
@@ -2371,11 +2299,9 @@
                                     const barWidth = bar.width;
                                     const barHeight = bar.height;
                                     
-                                    // Hitung posisi tengah bar
                                     const centerX = x;
                                     const centerY = y + (barHeight / 2);
                                     
-                                    // Tampilkan label di tengah bar
                                     ctx.fillStyle = '#ffffff';
                                     ctx.font = 'bold 12px Arial';
                                     ctx.textAlign = 'center';
@@ -2506,11 +2432,9 @@
                                     const barWidth = bar.width;
                                     const barHeight = bar.height;
                                     
-                                    // Hitung posisi di sebelah kanan bar (horizontal chart)
                                     const labelX = x + 5;
                                     const labelY = y;
                                     
-                                    // Tampilkan label di sebelah kanan bar (tanpa satuan)
                                     ctx.fillStyle = '#333333';
                                     ctx.font = 'bold 11px Arial';
                                     ctx.textAlign = 'left';
@@ -2637,11 +2561,9 @@
                                     const barWidth = bar.width;
                                     const barHeight = bar.height;
                                     
-                                    // Hitung posisi di sebelah kanan bar
                                     const labelX = x + 5;
                                     const labelY = y;
                                     
-                                    // Tampilkan label di sebelah kanan bar (tanpa satuan)
                                     ctx.fillStyle = '#333333';
                                     ctx.font = 'bold 11px Arial';
                                     ctx.textAlign = 'left';
@@ -2768,11 +2690,9 @@
                                     const barWidth = bar.width;
                                     const barHeight = bar.height;
                                     
-                                    // Hitung posisi di sebelah kanan bar
                                     const labelX = x + 5;
                                     const labelY = y;
                                     
-                                    // Tampilkan label di sebelah kanan bar (tanpa satuan)
                                     ctx.fillStyle = '#333333';
                                     ctx.font = 'bold 11px Arial';
                                     ctx.textAlign = 'left';
@@ -2899,11 +2819,9 @@
                                     const barWidth = bar.width;
                                     const barHeight = bar.height;
                                     
-                                    // Hitung posisi di sebelah kanan bar
                                     const labelX = x + 5;
                                     const labelY = y;
                                     
-                                    // Tampilkan label di sebelah kanan bar (tanpa satuan)
                                     ctx.fillStyle = '#333333';
                                     ctx.font = 'bold 11px Arial';
                                     ctx.textAlign = 'left';
@@ -2946,19 +2864,16 @@
             currentMachineDetails = await loadMachineDetails(machineId);
             hideLoading();
             
-            // Reset counters
             customLSMCounter = 0;
             customLSNMCounter = 0;
             customMSCounter = 0;
             
-            // Show/hide zero target info
             const zeroTargetInfo = document.getElementById('zero-target-info');
             const outputField = document.getElementById('input-output');
             const rejectField = document.getElementById('input-reject');
             
             if (currentMachineData && currentMachineData.target_per_minute === 0) {
                 zeroTargetInfo.style.display = 'block';
-                // Tambahkan class disabled dan atur placeholder
                 if (outputField) {
                     outputField.classList.add('disabled-for-zero-target');
                     outputField.placeholder = 'Not required (target per minute = 0)';
@@ -2971,7 +2886,6 @@
                 }
             } else {
                 zeroTargetInfo.style.display = 'none';
-                // Hapus class disabled dan reset placeholder
                 if (outputField) {
                     outputField.classList.remove('disabled-for-zero-target');
                     outputField.placeholder = 'Required if target per minute > 0';
@@ -2984,7 +2898,6 @@
                 }
             }
             
-            // Render ODT - DIMODIFIKASI: Field actual time lebih kecil
             if (currentMachineDetails.odt.length > 0) {
                 document.getElementById('odt-section').style.display = 'block';
                 const odtHTML = currentMachineDetails.odt.map(odt => `
@@ -3000,7 +2913,6 @@
                 document.getElementById('odt-list').innerHTML = odtHTML;
             }
             
-            // Render Line Stop Mesin
             if (currentMachineDetails.lineStopMesin.length > 0) {
                 document.getElementById('line-stop-mesin-section').style.display = 'block';
                 const lsmHTML = currentMachineDetails.lineStopMesin.map(ls => `
@@ -3022,7 +2934,6 @@
                 document.getElementById('line-stop-mesin-list').innerHTML = lsmHTML;
             }
             
-            // Render Line Stop Non Mesin
             if (currentMachineDetails.lineStopNonMesin.length > 0) {
                 document.getElementById('line-stop-non-mesin-section').style.display = 'block';
                 const lsnmHTML = currentMachineDetails.lineStopNonMesin.map(ls => `
@@ -3042,7 +2953,6 @@
                 document.getElementById('line-stop-non-mesin-list').innerHTML = lsnmHTML;
             }
             
-            // Render Minor Stop
             if (currentMachineDetails.minorStop.length > 0) {
                 document.getElementById('minor-stop-section').style.display = 'block';
                 const msHTML = currentMachineDetails.minorStop.map(ms => `
@@ -3277,7 +3187,6 @@
                 return;
             }
             
-            // Collect ODT data
             const odtData = [];
             if (currentMachineDetails && currentMachineDetails.odt) {
                 currentMachineDetails.odt.forEach(odt => {
@@ -3296,7 +3205,6 @@
                 });
             }
             
-            // Collect Line Stop Mesin data
             const lineStopMesinData = [];
             if (currentMachineDetails && currentMachineDetails.lineStopMesin) {
                 currentMachineDetails.lineStopMesin.forEach(ls => {
@@ -3315,7 +3223,6 @@
                 });
             }
             
-            // Collect Custom Line Stop Mesin
             for (let i = 1; i <= customLSMCounter; i++) {
                 const itemEl = document.getElementById(`custom-lsm-item-${i}`);
                 if (itemEl && itemEl.value) {
@@ -3331,7 +3238,6 @@
                 }
             }
             
-            // Collect Line Stop Non Mesin data
             const lineStopNonMesinData = [];
             if (currentMachineDetails && currentMachineDetails.lineStopNonMesin) {
                 currentMachineDetails.lineStopNonMesin.forEach(ls => {
@@ -3348,7 +3254,6 @@
                 });
             }
             
-            // Collect Custom Line Stop Non Mesin
             for (let i = 1; i <= customLSNMCounter; i++) {
                 const itemEl = document.getElementById(`custom-lsnm-item-${i}`);
                 if (itemEl && itemEl.value) {
@@ -3374,7 +3279,6 @@
             
             const results = calculateOEE(formData);
             
-            // Display ODT Exceeds
             const odtExceedContainer = document.getElementById('odt-exceed-list');
             if (odtExceedContainer) {
                 if (results.odtExceeds.length > 0) {
@@ -3399,7 +3303,6 @@
                 }
             }
             
-            // Update target recommendation
             const targetText = document.getElementById('target-text');
             const targetDetails = document.getElementById('target-details');
             
@@ -3424,7 +3327,6 @@
                 }
             }
             
-            // Show calculated results
             const resultsElement = document.getElementById('calculated-results');
             if (resultsElement) {
                 resultsElement.style.display = 'block';
@@ -3473,18 +3375,16 @@
             const shift = document.getElementById('input-shift')?.value;
             const machineId = document.getElementById('input-machine')?.value;
             const pic = document.getElementById('input-pic')?.value.toUpperCase() || '';
-            const productCode = document.getElementById('input-product')?.value.toUpperCase() || '';
             const batchNumber = document.getElementById('input-batch')?.value.toUpperCase() || '';
             const output = parseFloat(document.getElementById('input-output')?.value) || 0;
             const reject = parseFloat(document.getElementById('input-reject')?.value) || 0;
             const notes = document.getElementById('input-notes')?.value || '';
             
-            if (!date || !shift || !machineId || !pic || !productCode || !batchNumber) {
+            if (!date || !shift || !machineId || !pic || !batchNumber) {
                 showToast('Please fill all required fields', 'error');
                 return;
             }
             
-            // MODIFIKASI: Validasi output hanya jika target per minute > 0
             if (currentMachineData && currentMachineData.target_per_minute > 0 && output === 0) {
                 showToast('Actual Output is required for machines with target per minute > 0', 'error');
                 return;
@@ -3495,7 +3395,6 @@
                 return;
             }
             
-            // Collect all data
             const odtData = [];
             if (currentMachineDetails && currentMachineDetails.odt) {
                 currentMachineDetails.odt.forEach(odt => {
@@ -3538,7 +3437,6 @@
                 });
             }
             
-            // Custom LSM
             for (let i = 1; i <= customLSMCounter; i++) {
                 const itemEl = document.getElementById(`custom-lsm-item-${i}`);
                 if (itemEl && itemEl.value) {
@@ -3583,7 +3481,6 @@
                 });
             }
             
-            // Custom LSNM
             for (let i = 1; i <= customLSNMCounter; i++) {
                 const itemEl = document.getElementById(`custom-lsnm-item-${i}`);
                 if (itemEl && itemEl.value) {
@@ -3600,7 +3497,6 @@
                 }
             }
             
-            // Collect Minor Stop data
             const minorStopData = [];
             let totalMinorStopCount = 0;
             
@@ -3621,7 +3517,6 @@
                 });
             }
             
-            // Collect Custom Minor Stop
             for (let i = 1; i <= customMSCounter; i++) {
                 const itemEl = document.getElementById(`custom-ms-item-${i}`);
                 if (itemEl && itemEl.value) {
@@ -3650,7 +3545,6 @@
             
             const results = calculateOEE(formData);
             
-            // Add ODT exceeds to lineStopNonMesinData before saving
             const finalLineStopNonMesinData = [...lineStopNonMesinData, ...results.odtExceeds];
             
             const recordData = {
@@ -3660,7 +3554,6 @@
                 machine_name: currentMachineData.machine_name,
                 machine_id: machineId,
                 pic: pic,
-                product_code: productCode,
                 batch_number: batchNumber,
                 odt_data: odtData,
                 line_stop_mesin_data: lineStopMesinData,
@@ -3699,7 +3592,6 @@
             document.getElementById('input-shift').value = '';
             document.getElementById('input-machine').value = '';
             document.getElementById('input-pic').value = '';
-            document.getElementById('input-product').value = '';
             document.getElementById('input-batch').value = '';
             document.getElementById('input-output').value = '';
             document.getElementById('input-reject').value = '0';
@@ -3712,7 +3604,6 @@
             document.getElementById('calculated-results').style.display = 'none';
             document.getElementById('zero-target-info').style.display = 'none';
             
-            // Reset target to default message
             const targetText = document.getElementById('target-text');
             const targetDetails = document.getElementById('target-details');
             if (targetText) {
@@ -3738,7 +3629,6 @@
             customLSNMCounter = 0;
             customMSCounter = 0;
             
-            // Remove disabled class from output fields
             const outputField = document.getElementById('input-output');
             const rejectField = document.getElementById('input-reject');
             if (outputField) {
@@ -3962,7 +3852,6 @@
         }
 
         function renderMachineFormLists() {
-            // ODT List
             const odtList = document.getElementById('modal-odt-list');
             if (odtList) {
                 odtList.innerHTML = machineFormData.odtItems.map((item, i) => `
@@ -3974,7 +3863,6 @@
                 `).join('');
             }
             
-            // LSM List
             const lsmList = document.getElementById('modal-lsm-list');
             if (lsmList) {
                 lsmList.innerHTML = machineFormData.lsmItems.map((item, i) => `
@@ -3985,7 +3873,6 @@
                 `).join('');
             }
             
-            // LSNM List
             const lsnmList = document.getElementById('modal-lsnm-list');
             if (lsnmList) {
                 lsnmList.innerHTML = machineFormData.lsnmItems.map((item, i) => `
@@ -3996,7 +3883,6 @@
                 `).join('');
             }
             
-            // MS List
             const msList = document.getElementById('modal-ms-list');
             if (msList) {
                 msList.innerHTML = machineFormData.msItems.map((item, i) => `
@@ -4118,9 +4004,8 @@
             try {
                 const delimiter = '\t';
                 
-                // Headers
                 const headers = [
-                    'Date', 'Shift', 'Machine', 'PIC', 'Product Code', 'Batch Number',
+                    'Date', 'Shift', 'Machine', 'PIC', 'Batch Number',
                     'Actual Output', 'Reject', 'Minor Stop Count',
                     'Availability %', 'Performance %', 'Quality %', 'Availability 365 %',
                     'OEE Actual %', 'OEE 365 %',
@@ -4164,7 +4049,6 @@
                         r.shift || '',
                         r.machine_name || '',
                         r.pic || '',
-                        r.product_code || '',
                         r.batch_number || '',
                         r.actual_output || 0,
                         r.reject || 0,
@@ -4213,7 +4097,6 @@
                 
                 const config = defaultConfig;
                 
-                // Title
                 doc.setFontSize(18);
                 doc.setFont(undefined, 'bold');
                 doc.text(config.system_title, 14, 15);
@@ -4226,7 +4109,6 @@
                 doc.text(`Export Period: ${new Date(startDate).toLocaleDateString('id-ID')} - ${new Date(endDate).toLocaleDateString('id-ID')}`, 14, 28);
                 doc.text(`Generated: ${new Date().toLocaleDateString('id-ID')} ${new Date().toLocaleTimeString('id-ID')}`, 14, 33);
                 
-                // Summary Statistics
                 const avgOEEActual = records.length > 0 ? records.reduce((sum, r) => sum + (r.oee_actual || 0), 0) / records.length : 0;
                 const avgOEE365 = records.length > 0 ? records.reduce((sum, r) => sum + (r.oee_365 || 0), 0) / records.length : 0;
                 const totalOutput = records.reduce((sum, r) => sum + (r.actual_output || 0), 0);
@@ -4234,14 +4116,12 @@
                 doc.setFontSize(9);
                 doc.text(`Total Records: ${records.length} | Avg OEE Actual: ${avgOEEActual.toFixed(1)}% | Avg OEE 365: ${avgOEE365.toFixed(1)}% | Total Output: ${totalOutput.toLocaleString('id-ID')}`, 14, 38);
                 
-                // Table data
                 const tableData = records.map(r => {
                     return [
                         r.date ? new Date(r.date).toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit' }) : '',
                         r.shift || '',
                         r.machine_name || '',
                         r.pic || '',
-                        r.product_code || '',
                         r.batch_number || '',
                         (r.actual_output || 0).toLocaleString('id-ID'),
                         r.reject || 0,
@@ -4255,7 +4135,7 @@
                 
                 doc.autoTable({
                     startY: 42,
-                    head: [['Date', 'Shift', 'Machine', 'PIC', 'Product', 'Batch', 'Output', 'Reject', 'A%', 'P%', 'Q%', 'OEE Act', 'OEE 365']],
+                    head: [['Date', 'Shift', 'Machine', 'PIC', 'Batch', 'Output', 'Reject', 'A%', 'P%', 'Q%', 'OEE Act', 'OEE 365']],
                     body: tableData,
                     styles: { fontSize: 7, cellPadding: 2 },
                     headStyles: { fillColor: [102, 125, 234], fontStyle: 'bold' },
@@ -4308,7 +4188,6 @@
         function navigateTo(page) {
             currentPage = page;
             
-            // Lock management when navigating away
             if (currentPage !== 'management') {
                 isManagementUnlocked = false;
             }
@@ -4321,13 +4200,10 @@
         // =============================================
         async function initializeApp() {
             try {
-                // Initialize theme first
                 initializeTheme();
                 
-                // Show initial loading
                 showLoading('Connecting to database...');
                 
-                // Load initial data
                 await Promise.all([
                     loadMachines(),
                     loadOEERecords()
@@ -4336,7 +4212,6 @@
                 hideLoading();
                 renderApp();
                 
-                // Auto-refresh data every 30 seconds
                 setInterval(async () => {
                     await loadOEERecords();
                     if (currentPage === 'dashboard') {
@@ -4349,7 +4224,6 @@
                 hideLoading();
                 showToast('Failed to initialize application', 'error');
                 
-                // Show error screen
                 const app = document.getElementById('app-wrapper');
                 app.innerHTML = `
                     <div style="display: flex; align-items: center; justify-content: center; height: 100vh; flex-direction: column; gap: 16px; text-align: center; padding: 20px;">
@@ -4361,7 +4235,6 @@
             }
         }
 
-        // Start the application
         document.addEventListener('DOMContentLoaded', initializeApp);
     </script>
 </body>
