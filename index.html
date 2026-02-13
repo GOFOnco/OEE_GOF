@@ -105,6 +105,7 @@
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
             padding: 24px;
             margin-bottom: 24px;
+            position: relative;
         }
         
         .card-header {
@@ -517,24 +518,38 @@
             word-break: break-word !important;
         }
         
+        .chart-wrapper {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            margin-top: 8px;
+        }
+        
         .chart-total-badge {
             position: absolute;
-            top: -15px;
-            right: 20px;
+            top: -25px;
+            right: 0px;
             background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
             color: white;
-            padding: 8px 16px;
+            padding: 6px 14px;
             border-radius: 20px;
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 700;
             box-shadow: 0 4px 12px rgba(102, 125, 234, 0.3);
-            z-index: 10;
+            z-index: 20;
             display: inline-flex;
             align-items: center;
             gap: 6px;
+            letter-spacing: 0.3px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            white-space: nowrap;
         }
         
-        .chart-wrapper {
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
             position: relative;
         }
         
@@ -572,6 +587,13 @@
             
             .scorecard-value {
                 font-size: 32px;
+            }
+            
+            .chart-total-badge {
+                top: -22px;
+                right: 0px;
+                padding: 5px 12px;
+                font-size: 11px;
             }
             
             table {
@@ -634,10 +656,10 @@
             }
             
             .chart-total-badge {
-                top: -12px;
-                right: 15px;
-                padding: 6px 12px;
-                font-size: 12px;
+                top: -20px;
+                right: 0px;
+                padding: 4px 10px;
+                font-size: 10px;
             }
             
             table {
@@ -721,10 +743,10 @@
             }
             
             .chart-total-badge {
-                top: -10px;
-                right: 10px;
-                padding: 5px 10px;
-                font-size: 11px;
+                top: -18px;
+                right: 0px;
+                padding: 4px 8px;
+                font-size: 9px;
             }
             
             table {
@@ -852,10 +874,10 @@
             }
             
             .chart-total-badge {
-                top: -8px;
-                right: 8px;
-                padding: 4px 8px;
-                font-size: 10px;
+                top: -16px;
+                right: 0px;
+                padding: 3px 6px;
+                font-size: 8px;
             }
             
             table {
@@ -974,10 +996,10 @@
             }
             
             .chart-total-badge {
-                top: -6px;
-                right: 6px;
-                padding: 3px 6px;
-                font-size: 9px;
+                top: -14px;
+                right: 0px;
+                padding: 2px 5px;
+                font-size: 7px;
             }
             
             table {
@@ -1633,7 +1655,7 @@
                             </div>
                         </div>
                         <div class="card">
-                            <div class="card-header">⏱️ ODT Top 10 (menit)</div>
+                            <div class="card-header" style="margin-bottom: 5px;">⏱️ ODT Top 10 (menit)</div>
                             <div class="chart-wrapper">
                                 <div id="odt-total-badge" class="chart-total-badge">📊 Total: 0 menit</div>
                                 <div class="chart-container-horizontal">
@@ -1645,7 +1667,7 @@
                     
                     <div class="grid-2">
                         <div class="card">
-                            <div class="card-header">🔧 Line Stop Mesin Top 10 (menit)</div>
+                            <div class="card-header" style="margin-bottom: 5px;">🔧 Line Stop Mesin Top 10 (menit)</div>
                             <div class="chart-wrapper">
                                 <div id="lsm-total-badge" class="chart-total-badge">🔧 Total: 0 menit</div>
                                 <div class="chart-container-horizontal">
@@ -1654,7 +1676,7 @@
                             </div>
                         </div>
                         <div class="card">
-                            <div class="card-header">⚠️ Line Stop Non Mesin Top 10 (menit)</div>
+                            <div class="card-header" style="margin-bottom: 5px;">⚠️ Line Stop Non Mesin Top 10 (menit)</div>
                             <div class="chart-wrapper">
                                 <div id="lsnm-total-badge" class="chart-total-badge">⚠️ Total: 0 menit</div>
                                 <div class="chart-container-horizontal">
@@ -1665,7 +1687,7 @@
                     </div>
                     
                     <div class="card">
-                        <div class="card-header">⏸️ Minor Stop Top 10 (kali)</div>
+                        <div class="card-header" style="margin-bottom: 5px;">⏸️ Minor Stop Top 10 (kali)</div>
                         <div class="chart-wrapper">
                             <div id="ms-total-badge" class="chart-total-badge">⏸️ Total: 0 kali</div>
                             <div class="chart-container-horizontal">
