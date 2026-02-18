@@ -277,7 +277,7 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            min-width: 900px;
+            min-width: 1200px;
         }
         
         th {
@@ -1289,6 +1289,59 @@
                             </table>
                         </div>
                     </div>
+                    
+                    <!-- Line Stop Mesin Table -->
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-header-left">🔧 Line Stop Mesin Details</div>
+                        </div>
+                        <div class="table-wrapper">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th class="nowrap">Date</th>
+                                        <th class="nowrap">Shift</th>
+                                        <th class="nowrap">Machine</th>
+                                        <th class="nowrap">PIC</th>
+                                        <th class="nowrap">Batch</th>
+                                        <th class="nowrap">Line Stop</th>
+                                        <th class="nowrap">Action</th>
+                                        <th class="nowrap">Durasi</th>
+                                        <th class="nowrap">WR Number</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${generateLineStopMesinRows(filtered)}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- Line Stop Non Mesin Table -->
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-header-left">⚠️ Line Stop Non Mesin Details</div>
+                        </div>
+                        <div class="table-wrapper">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th class="nowrap">Date</th>
+                                        <th class="nowrap">Shift</th>
+                                        <th class="nowrap">Machine</th>
+                                        <th class="nowrap">PIC</th>
+                                        <th class="nowrap">Batch</th>
+                                        <th class="nowrap">Line Stop</th>
+                                        <th class="nowrap">Action</th>
+                                        <th class="nowrap">Durasi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${generateLineStopNonMesinRows(filtered)}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             `;
         }
@@ -1493,6 +1546,133 @@
                     </tr>
                 `;
             }).join('');
+        }
+
+        // Fungsi untuk generate baris tabel Line Stop Mesin
+        function generateLineStopMesinRows(records) {
+            const rows = [];
+            
+            records.forEach(r => {
+                try {
+                    if (r.line_stop_mesin_data) {
+                        const lsData = typeof r.line_stop_mesin_data === 'string' ? JSON.parse(r.line_stop_mesin_data) : r.line_stop_mesin_data;
+                        
+                        lsData.forEach(ls => {
+                            if (ls.duration && parseFloat(ls.duration) > 0) {
+                                rows.push({
+                                    date: r.date ? new Date(r.date).toLocaleDateString('id-ID') : '-',
+                                    shift: r.shift || '-',
+                                    machine: r.machine_name || '-',
+                                    pic: r.pic || '-',
+                                    batch: r.batch_number || '-',
+                                    lineStop: ls.item || '-',
+                                    action: ls.action || '-',
+                                    durasi: parseFloat(ls.duration || 0).toFixed(1),
+                                    wr: ls.wr || '-'
+                                });
+                            }
+                        });
+                    }
+                } catch (e) {
+                    console.error('Error parsing line stop mesin data:', e);
+                }
+            });
+            
+            // Sort by date descending
+            rows.sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            if (rows.length === 0) {
+                return '<tr><td colspan="9" style="text-align: center; color: var(--text-secondary); padding: 40px;">No line stop mesin records found for this period</td></tr>';
+            }
+            
+            return rows.map(row => `
+                <tr>
+                    <td class="wrap-text">${row.date}</td>
+                    <td class="wrap-text">${row.shift}</td>
+                    <td class="wrap-text"><strong>${row.machine}</strong></td>
+                    <td class="wrap-text">${row.pic}</td>
+                    <td class="wrap-text">${row.batch}</td>
+                    <td class="wrap-text">${row.lineStop}</td>
+                    <td class="wrap-text">${row.action}</td>
+                    <td class="wrap-text">${row.durasi} min</td>
+                    <td class="wrap-text">${row.wr}</td>
+                </tr>
+            `).join('');
+        }
+
+        // Fungsi baru untuk generate baris tabel Line Stop Non Mesin
+        function generateLineStopNonMesinRows(records) {
+            const rows = [];
+            
+            records.forEach(r => {
+                try {
+                    // Data dari line_stop_non_mesin_data
+                    if (r.line_stop_non_mesin_data) {
+                        const lsData = typeof r.line_stop_non_mesin_data === 'string' ? JSON.parse(r.line_stop_non_mesin_data) : r.line_stop_non_mesin_data;
+                        
+                        lsData.forEach(ls => {
+                            if (ls.duration && parseFloat(ls.duration) > 0) {
+                                rows.push({
+                                    date: r.date ? new Date(r.date).toLocaleDateString('id-ID') : '-',
+                                    shift: r.shift || '-',
+                                    machine: r.machine_name || '-',
+                                    pic: r.pic || '-',
+                                    batch: r.batch_number || '-',
+                                    lineStop: ls.item || '-',
+                                    action: ls.action || '-',
+                                    durasi: parseFloat(ls.duration || 0).toFixed(1)
+                                });
+                            }
+                        });
+                    }
+                    
+                    // Tambahkan ODT exceed jika ada
+                    if (r.odt_data) {
+                        const odtData = typeof r.odt_data === 'string' ? JSON.parse(r.odt_data) : r.odt_data;
+                        odtData.forEach(odt => {
+                            if (odt.checked) {
+                                const actualTime = parseFloat(odt.actualTime || 0);
+                                const standardTime = parseFloat(odt.standardTime || 0);
+                                if (actualTime > standardTime) {
+                                    const exceed = actualTime - standardTime;
+                                    rows.push({
+                                        date: r.date ? new Date(r.date).toLocaleDateString('id-ID') : '-',
+                                        shift: r.shift || '-',
+                                        machine: r.machine_name || '-',
+                                        pic: r.pic || '-',
+                                        batch: r.batch_number || '-',
+                                        lineStop: `ODT Exceed - ${odt.name}`,
+                                        action: 'Auto-generated from ODT exceed',
+                                        durasi: exceed.toFixed(1)
+                                    });
+                                }
+                            }
+                        });
+                    }
+                } catch (e) {
+                    console.error('Error parsing line stop non mesin data:', e);
+                }
+            });
+            
+            // Sort by date descending
+            rows.sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            if (rows.length === 0) {
+                return '<tr><td colspan="8" style="text-align: center; color: var(--text-secondary); padding: 40px;">No line stop non mesin records found for this period</td></tr>';
+            }
+            
+            return rows.map(row => `
+                <tr>
+                    <td class="wrap-text">${row.date}</td>
+                    <td class="wrap-text">${row.shift}</td>
+                    <td class="wrap-text"><strong>${row.machine}</strong></td>
+                    <td class="wrap-text">${row.pic}</td>
+                    <td class="wrap-text">${row.batch}</td>
+                    <td class="wrap-text">${row.lineStop}</td>
+                    <td class="wrap-text">${row.action}</td>
+                    <td class="wrap-text">${row.durasi} min</td>
+                </tr>
+            `).join('');
         }
 
         function renderInputPage() {
