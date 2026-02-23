@@ -554,6 +554,18 @@
                 padding-right: 40px;
             }
         }
+
+        .clickable-row {
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .clickable-row:hover {
+            background-color: var(--accent-primary) !important;
+            color: white;
+        }
+        .clickable-row:hover td {
+            color: white;
+        }
     </style>
 </head>
 <body class="h-full">
@@ -630,7 +642,10 @@
             endDate: getCurrentMonthEnd(),
             shift: 'all',
             machine: 'all',
-            pic: 'all'
+            pic: 'all',
+            // Filter tambahan untuk detail line stop
+            detailLineStopItem: 'all',      // Item yang dipilih (misal: "SETUP MESIN")
+            detailLineStopType: 'all'        // Tipe line stop: 'mesin' atau 'non_mesin'
         };
 
         function showToast(message, type = 'success') {
@@ -1060,6 +1075,14 @@
             const lsNonMesinTotal = calculateLineStopNonMesinTotal(filtered);
             const minorStopTotal = calculateMinorStopTotal(filtered);
             
+            // Tampilkan info filter detail jika ada
+            const detailFilterInfo = (filters.detailLineStopItem !== 'all') 
+                ? `<div style="margin-top: 16px; padding: 12px; background: rgba(102, 125, 234, 0.2); border-radius: 8px; border-left: 4px solid var(--accent-primary);">
+                     <span style="color: var(--text-primary); font-size: 14px;">🔍 Filter Detail: Menampilkan data untuk item <strong>${filters.detailLineStopItem}</strong> (${filters.detailLineStopType === 'mesin' ? 'Line Stop Mesin' : 'Line Stop Non Mesin'})</span>
+                     <button class="btn btn-secondary" style="margin-left: 16px; padding: 4px 12px;" onclick="clearDetailFilter()">Reset Filter</button>
+                   </div>`
+                : '';
+            
             return `
                 <div class="container-main">
                     <div class="card">
@@ -1108,6 +1131,7 @@
                                 </span>
                             </div>
                         </div>
+                        ${detailFilterInfo}
                     </div>
                     
                     <div class="card">
@@ -1549,19 +1573,28 @@
                 return '<tr><td colspan="9" style="text-align: center; color: var(--text-secondary); padding: 40px;">No line stop mesin records found for this period</td></tr>';
             }
             
-            return rows.map(row => `
-                <tr>
-                    <td class="wrap-text">${row.date}</td>
-                    <td class="wrap-text">${row.shift}</td>
-                    <td class="wrap-text"><strong>${row.machine}</strong></td>
-                    <td class="wrap-text">${row.pic}</td>
-                    <td class="wrap-text">${row.batch}</td>
-                    <td class="wrap-text">${row.lineStop}</td>
-                    <td class="wrap-text">${row.action}</td>
-                    <td class="wrap-text">${row.durasi} min</td>
-                    <td class="wrap-text">${row.wr}</td>
-                </tr>
-            `).join('');
+            // Filter berdasarkan item yang dipilih di detail
+            const filteredRows = (filters.detailLineStopItem !== 'all' && filters.detailLineStopType === 'mesin')
+                ? rows.filter(row => row.lineStop === filters.detailLineStopItem)
+                : rows;
+            
+            return filteredRows.map(row => {
+                // Tambahkan class 'clickable-row' dan data atribut untuk filter
+                const itemName = row.lineStop;
+                return `
+                    <tr class="clickable-row" onclick="setDetailFilter('${itemName.replace(/'/g, "\\'")}', 'mesin')" title="Klik untuk melihat semua data item ini">
+                        <td class="wrap-text">${row.date}</td>
+                        <td class="wrap-text">${row.shift}</td>
+                        <td class="wrap-text"><strong>${row.machine}</strong></td>
+                        <td class="wrap-text">${row.pic}</td>
+                        <td class="wrap-text">${row.batch}</td>
+                        <td class="wrap-text"><strong>${row.lineStop}</strong></td>
+                        <td class="wrap-text">${row.action}</td>
+                        <td class="wrap-text">${row.durasi} min</td>
+                        <td class="wrap-text">${row.wr}</td>
+                    </tr>
+                `;
+            }).join('');
         }
 
         function generateLineStopNonMesinRows(records) {
@@ -1621,18 +1654,43 @@
                 return '<tr><td colspan="8" style="text-align: center; color: var(--text-secondary); padding: 40px;">No line stop non mesin records found for this period</td></tr>';
             }
             
-            return rows.map(row => `
-                <tr>
-                    <td class="wrap-text">${row.date}</td>
-                    <td class="wrap-text">${row.shift}</td>
-                    <td class="wrap-text"><strong>${row.machine}</strong></td>
-                    <td class="wrap-text">${row.pic}</td>
-                    <td class="wrap-text">${row.batch}</td>
-                    <td class="wrap-text">${row.lineStop}</td>
-                    <td class="wrap-text">${row.action}</td>
-                    <td class="wrap-text">${row.durasi} min</td>
-                </tr>
-            `).join('');
+            // Filter berdasarkan item yang dipilih di detail
+            const filteredRows = (filters.detailLineStopItem !== 'all' && filters.detailLineStopType === 'non_mesin')
+                ? rows.filter(row => row.lineStop === filters.detailLineStopItem)
+                : rows;
+            
+            return filteredRows.map(row => {
+                // Tambahkan class 'clickable-row' dan data atribut untuk filter
+                const itemName = row.lineStop;
+                return `
+                    <tr class="clickable-row" onclick="setDetailFilter('${itemName.replace(/'/g, "\\'")}', 'non_mesin')" title="Klik untuk melihat semua data item ini">
+                        <td class="wrap-text">${row.date}</td>
+                        <td class="wrap-text">${row.shift}</td>
+                        <td class="wrap-text"><strong>${row.machine}</strong></td>
+                        <td class="wrap-text">${row.pic}</td>
+                        <td class="wrap-text">${row.batch}</td>
+                        <td class="wrap-text"><strong>${row.lineStop}</strong></td>
+                        <td class="wrap-text">${row.action}</td>
+                        <td class="wrap-text">${row.durasi} min</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Fungsi untuk mengatur filter berdasarkan item line stop yang diklik
+        function setDetailFilter(item, type) {
+            filters.detailLineStopItem = item;
+            filters.detailLineStopType = type;
+            renderApp(); // Render ulang dashboard dengan filter baru
+            showToast(`Menampilkan detail untuk: ${item}`, 'success');
+        }
+
+        // Fungsi untuk menghapus filter detail
+        function clearDetailFilter() {
+            filters.detailLineStopItem = 'all';
+            filters.detailLineStopType = 'all';
+            renderApp();
+            showToast('Filter detail dihapus', 'success');
         }
 
         function renderInputPage() {
@@ -4175,7 +4233,7 @@
         }
 
         function getFilteredRecords() {
-            return allOEERecords.filter(r => {
+            let records = allOEERecords.filter(r => {
                 if (!r.date) return false;
                 
                 const rDate = new Date(r.date);
@@ -4189,6 +4247,51 @@
                 
                 return dateMatch && shiftMatch && machineMatch && picMatch;
             });
+
+            // Filter berdasarkan detail line stop jika ada
+            if (filters.detailLineStopItem !== 'all') {
+                records = records.filter(r => {
+                    let match = false;
+                    
+                    if (filters.detailLineStopType === 'mesin' && r.line_stop_mesin_data) {
+                        try {
+                            const lsData = typeof r.line_stop_mesin_data === 'string' ? JSON.parse(r.line_stop_mesin_data) : r.line_stop_mesin_data;
+                            match = lsData.some(ls => ls.item === filters.detailLineStopItem);
+                        } catch (e) {}
+                    }
+                    
+                    if (filters.detailLineStopType === 'non_mesin') {
+                        if (r.line_stop_non_mesin_data) {
+                            try {
+                                const lsData = typeof r.line_stop_non_mesin_data === 'string' ? JSON.parse(r.line_stop_non_mesin_data) : r.line_stop_non_mesin_data;
+                                match = lsData.some(ls => ls.item === filters.detailLineStopItem);
+                            } catch (e) {}
+                        }
+                        
+                        if (!match && r.odt_data) {
+                            try {
+                                const odtData = typeof r.odt_data === 'string' ? JSON.parse(r.odt_data) : r.odt_data;
+                                odtData.forEach(odt => {
+                                    if (odt.checked) {
+                                        const actualTime = parseFloat(odt.actualTime || 0);
+                                        const standardTime = parseFloat(odt.standardTime || 0);
+                                        if (actualTime > standardTime) {
+                                            const exceedName = `ODT Exceed - ${odt.name}`;
+                                            if (exceedName === filters.detailLineStopItem) {
+                                                match = true;
+                                            }
+                                        }
+                                    }
+                                });
+                            } catch (e) {}
+                        }
+                    }
+                    
+                    return match;
+                });
+            }
+            
+            return records;
         }
 
         function navigateTo(page) {
@@ -4197,6 +4300,10 @@
             if (currentPage !== 'management') {
                 isManagementUnlocked = false;
             }
+            
+            // Reset filter detail saat pindah halaman
+            filters.detailLineStopItem = 'all';
+            filters.detailLineStopType = 'all';
             
             renderApp();
         }
