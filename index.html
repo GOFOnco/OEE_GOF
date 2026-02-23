@@ -499,7 +499,6 @@
             font-weight: 600;
         }
         
-        /* Text wrapping and overflow fixes */
         .wrap-text {
             white-space: normal !important;
             word-wrap: break-word !important;
@@ -527,7 +526,6 @@
             word-break: break-word !important;
         }
         
-        /* Style untuk field actual time yang lebih kecil */
         .odt-actual-time {
             width: 90px !important;
             padding: 4px 6px !important;
@@ -535,14 +533,12 @@
             text-align: center !important;
         }
         
-        /* Style untuk field yang disable ketika target per minute = 0 */
         .disabled-for-zero-target {
             background-color: rgba(239, 239, 239, 0.3) !important;
             color: var(--text-secondary) !important;
             cursor: not-allowed !important;
         }
 
-        /* Responsive styles */
         @media (max-width: 768px) {
             .container-main {
                 padding: 16px;
@@ -554,6 +550,9 @@
                 padding: 10px 16px;
                 font-size: 13px;
             }
+            .chart-container-horizontal {
+                padding-right: 40px;
+            }
         }
     </style>
 </head>
@@ -562,18 +561,12 @@
     <button class="theme-toggle" onclick="toggleTheme()" id="theme-toggle-btn" aria-label="Toggle dark mode"> 🌙 </button>
 
     <script>
-        // =============================================
-        // 🔥 SUPABASE CONFIGURATION
-        // =============================================
         const SUPABASE_URL = 'https://ehespstzpubqkovkykby.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVoZXNwc3R6cHVicWtvdmt5a2J5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU1MDY4MjUsImV4cCI6MjA4MTA4MjgyNX0.XTuuHksJVe8ZEwcN5gshXNz7WqEWVPr10eIsYO-zar4';
         
         const { createClient } = supabase;
         const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
-        // =============================================
-        // THEME MANAGEMENT
-        // =============================================
         function initializeTheme() {
             const savedTheme = localStorage.getItem('oee-theme') || 'light';
             document.documentElement.setAttribute('data-theme', savedTheme);
@@ -597,12 +590,9 @@
                 btn.textContent = theme === 'dark' ? '☀️' : '🌙';
             }
         }
-        
-        // =============================================
-        // STATE & CONSTANTS
-        // =============================================
+
         const defaultConfig = {
-            system_title: "OEE Monitoring System PT. GOF",
+            system_title: "OEE Digital Monitoring System PT. GOF",
             company_name: "Created by MSTD GOF"
         };
 
@@ -622,9 +612,6 @@
             'Longshift Malam': { start: '19:00', end: '07:00', minutes: 720 }
         };
 
-        // =============================================
-        // UTILITY FUNCTIONS - TANGGAL BULAN INI
-        // =============================================
         function getCurrentMonthStart() {
             const date = new Date();
             date.setDate(1);
@@ -638,7 +625,6 @@
             return date.toISOString().split('T')[0];
         }
 
-        // Filter state
         let filters = {
             startDate: getCurrentMonthStart(),
             endDate: getCurrentMonthEnd(),
@@ -690,9 +676,6 @@
             if (modal) modal.remove();
         }
 
-        // =============================================
-        // DATABASE FUNCTIONS
-        // =============================================
         async function loadMachines() {
             try {
                 const { data, error } = await db
@@ -900,9 +883,6 @@
             }
         }
 
-        // =============================================
-        // CALCULATION FUNCTIONS
-        // =============================================
         function calculateOEE(formData) {
             const shiftMinutes = SHIFTS[formData.shift]?.minutes || 0;
             const targetPerMinute = formData.targetPerMinute || 0;
@@ -1011,9 +991,6 @@
             };
         }
 
-        // =============================================
-        // RENDERING FUNCTIONS
-        // =============================================
         function renderApp() {
             const app = document.getElementById('app-wrapper');
             const config = defaultConfig;
@@ -1078,7 +1055,6 @@
             const startDateDisplay = new Date(filters.startDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'long' });
             const endDateDisplay = new Date(filters.endDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
             
-            // Hitung total untuk chart
             const odtTotal = calculateODTTotal(filtered);
             const lsMesinTotal = calculateLineStopMesinTotal(filtered);
             const lsNonMesinTotal = calculateLineStopNonMesinTotal(filtered);
@@ -1086,7 +1062,6 @@
             
             return `
                 <div class="container-main">
-                    <!-- Filters -->
                     <div class="card">
                         <div class="card-header">
                             <div class="card-header-left">🔍 Filter Data</div>
@@ -1135,7 +1110,6 @@
                         </div>
                     </div>
                     
-                    <!-- Scorecards -->
                     <div class="card">
                         <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; margin-bottom: 24px;">
                             <div class="scorecard ${avgOEEActual >= 88 ? 'good' : 'bad'}">
@@ -1163,7 +1137,6 @@
                         </div>
                     </div>
                     
-                    <!-- Charts Row 1 -->
                     <div class="grid-2">
                         <div class="card">
                             <div class="card-header">
@@ -1183,7 +1156,6 @@
                         </div>
                     </div>
                     
-                    <!-- Charts Row 2 -->
                     <div class="grid-2">
                         <div class="card">
                             <div class="card-header">
@@ -1204,7 +1176,6 @@
                         </div>
                     </div>
                     
-                    <!-- Charts Row 3 -->
                     <div class="grid-2">
                         <div class="card">
                             <div class="card-header">
@@ -1226,7 +1197,6 @@
                         </div>
                     </div>
                     
-                    <!-- Minor Stop Chart -->
                     <div class="card">
                         <div class="card-header">
                             <div class="card-header-left">⏸️ Minor Stop Top 10 (kali)</div>
@@ -1237,7 +1207,6 @@
                         </div>
                     </div>
                     
-                    <!-- Operator Performance -->
                     <div class="card">
                         <div class="card-header">
                             <div class="card-header-left">👨‍🔧 Operator Performance</div>
@@ -1260,7 +1229,6 @@
                         </div>
                     </div>
                     
-                    <!-- OEE History -->
                     <div class="card">
                         <div class="card-header">
                             <div class="card-header-left">📋 OEE History</div>
@@ -1290,7 +1258,6 @@
                         </div>
                     </div>
                     
-                    <!-- Line Stop Mesin Table -->
                     <div class="card">
                         <div class="card-header">
                             <div class="card-header-left">🔧 Line Stop Mesin Details</div>
@@ -1317,7 +1284,6 @@
                         </div>
                     </div>
                     
-                    <!-- Line Stop Non Mesin Table -->
                     <div class="card">
                         <div class="card-header">
                             <div class="card-header-left">⚠️ Line Stop Non Mesin Details</div>
@@ -1346,9 +1312,6 @@
             `;
         }
 
-        // =============================================
-        // FUNGSI UNTUK MENGHITUNG TOTAL CHART
-        // =============================================
         function calculateODTTotal(records) {
             let total = 0;
             records.forEach(r => {
@@ -1401,7 +1364,6 @@
                     console.error('Error calculating LSNM total:', e);
                 }
                 
-                // Tambahkan ODT exceed jika ada
                 try {
                     if (r.odt_data) {
                         const odtData = typeof r.odt_data === 'string' ? JSON.parse(r.odt_data) : r.odt_data;
@@ -1501,7 +1463,6 @@
                 picStats[r.pic].count += 1;
             });
             
-            // Sort by Avg OEE Actual (descending)
             const sorted = Object.entries(picStats)
                 .map(([pic, stats]) => ({
                     pic,
@@ -1510,7 +1471,12 @@
                     totalTargetOutput: stats.totalTargetOutput,
                     count: stats.count
                 }))
+                .filter(s => s.totalOutput > 0 || s.totalTargetOutput > 0)
                 .sort((a, b) => b.avgOEE - a.avgOEE);
+            
+            if (sorted.length === 0) {
+                return '<tr><td colspan="5" style="text-align: center; color: var(--text-secondary); padding: 40px;">Tidak ada operator dengan data output</td></tr>';
+            }
             
             return sorted.map(s => `
                 <tr>
@@ -1548,7 +1514,6 @@
             }).join('');
         }
 
-        // Fungsi untuk generate baris tabel Line Stop Mesin
         function generateLineStopMesinRows(records) {
             const rows = [];
             
@@ -1578,7 +1543,6 @@
                 }
             });
             
-            // Sort by date descending
             rows.sort((a, b) => new Date(b.date) - new Date(a.date));
             
             if (rows.length === 0) {
@@ -1600,13 +1564,11 @@
             `).join('');
         }
 
-        // Fungsi baru untuk generate baris tabel Line Stop Non Mesin
         function generateLineStopNonMesinRows(records) {
             const rows = [];
             
             records.forEach(r => {
                 try {
-                    // Data dari line_stop_non_mesin_data
                     if (r.line_stop_non_mesin_data) {
                         const lsData = typeof r.line_stop_non_mesin_data === 'string' ? JSON.parse(r.line_stop_non_mesin_data) : r.line_stop_non_mesin_data;
                         
@@ -1626,7 +1588,6 @@
                         });
                     }
                     
-                    // Tambahkan ODT exceed jika ada
                     if (r.odt_data) {
                         const odtData = typeof r.odt_data === 'string' ? JSON.parse(r.odt_data) : r.odt_data;
                         odtData.forEach(odt => {
@@ -1654,7 +1615,6 @@
                 }
             });
             
-            // Sort by date descending
             rows.sort((a, b) => new Date(b.date) - new Date(a.date));
             
             if (rows.length === 0) {
@@ -1695,7 +1655,6 @@
                             <div class="card-header-left">✏️ Input OEE Data</div>
                         </div>
                         
-                        <!-- Basic Info -->
                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-bottom: 24px;">
                             <div>
                                 <label class="label">Tanggal *</label>
@@ -1729,7 +1688,6 @@
                             </div>
                         </div>
                         
-                        <!-- ODT Section -->
                         <div id="odt-section" style="margin-bottom: 24px; display: none;">
                             <h4 style="font-weight: 700; margin-bottom: 12px; color: var(--text-primary);">⏱️ ODT (Operational Downtime)</h4>
                             <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px;">
@@ -1738,7 +1696,6 @@
                             <div id="odt-list"></div>
                         </div>
                         
-                        <!-- Line Stop Mesin Section -->
                         <div id="line-stop-mesin-section" style="margin-bottom: 24px; display: none;">
                             <h4 style="font-weight: 700; margin-bottom: 12px; color: var(--text-primary);">🔧 Line Stop Mesin</h4>
                             <div id="line-stop-mesin-list"></div>
@@ -1746,18 +1703,14 @@
                             <div id="custom-line-stop-mesin-container"></div>
                         </div>
                         
-                        <!-- Line Stop Non Mesin Section -->
                         <div id="line-stop-non-mesin-section" style="margin-bottom: 24px; display: none;">
                             <h4 style="font-weight: 700; margin-bottom: 12px; color: var(--text-primary);">⚠️ Line Stop Non Mesin</h4>
                             <div id="line-stop-non-mesin-list"></div>
                             <button type="button" class="btn btn-secondary" style="margin-top: 12px;" onclick="addCustomLineStopNonMesin()">➕ Add Custom Line Stop Non Mesin</button>
                             <div id="custom-line-stop-non-mesin-container"></div>
-                            
-                            <!-- ODT Exceed List -->
                             <div id="odt-exceed-list" style="margin-top: 16px;"></div>
                         </div>
                         
-                        <!-- Minor Stop Section -->
                         <div id="minor-stop-section" style="margin-bottom: 24px; display: none;">
                             <h4 style="font-weight: 700; margin-bottom: 12px; color: var(--text-primary);">⏸️ Minor Stop</h4>
                             <div id="minor-stop-list"></div>
@@ -1765,7 +1718,6 @@
                             <div id="custom-minor-stop-container"></div>
                         </div>
                         
-                        <!-- Output -->
                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-bottom: 24px;">
                             <div>
                                 <label class="label">Actual Output</label>
@@ -1777,7 +1729,6 @@
                             </div>
                         </div>
                         
-                        <!-- Info untuk mesin dengan target per minute = 0 -->
                         <div id="zero-target-info" style="display: none; background: rgba(102, 125, 234, 0.1); padding: 16px; border-radius: 8px; margin-bottom: 24px; border: 2px solid var(--accent-primary);">
                             <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
                                 <span style="color: var(--accent-primary); font-size: 20px;">ℹ️</span>
@@ -1789,7 +1740,6 @@
                             </p>
                         </div>
                         
-                        <!-- Target Recommendation -->
                         <div id="target-recommendation" class="target-box">
                             <h4 style="font-weight: 800; margin-bottom: 12px; color: var(--accent-primary); font-size: 18px; display: flex; align-items: center; gap: 8px;">
                                 🎯 Target Output Recommendation
@@ -1802,7 +1752,6 @@
                             </div>
                         </div>
                         
-                        <!-- Calculated Results -->
                         <div id="calculated-results" style="background: var(--bg-secondary); padding: 20px; border-radius: 12px; margin-bottom: 24px; display: none;">
                             <h4 style="font-weight: 700; margin-bottom: 16px; color: var(--text-primary);">🧮 Calculated Results</h4>
                             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px;">
@@ -1833,13 +1782,11 @@
                             </div>
                         </div>
                         
-                        <!-- Notes -->
                         <div style="margin-bottom: 24px;">
                             <label class="label">Catatan</label>
                             <textarea id="input-notes" rows="3" class="input-field" placeholder="Additional notes (optional)"></textarea>
                         </div>
                         
-                        <!-- Actions -->
                         <div style="display: flex; gap: 16px; flex-wrap: wrap;">
                             <button class="btn btn-primary" onclick="saveOEEData()" style="flex: 1; min-width: 200px;">💾 Simpan Data OEE</button>
                             <button class="btn btn-secondary" onclick="resetInputForm()" style="flex: 1; min-width: 200px;">🔄 Reset Form</button>
@@ -1944,9 +1891,26 @@
             `;
         }
 
-        // =============================================
-        // CHART RENDERING
-        // =============================================
+        // Fungsi untuk wrap text di canvas (Chart.js)
+        function wrapText(ctx, text, maxWidth) {
+            const words = text.split(' ');
+            const lines = [];
+            let currentLine = words[0];
+
+            for (let i = 1; i < words.length; i++) {
+                const word = words[i];
+                const width = ctx.measureText(currentLine + ' ' + word).width;
+                if (width < maxWidth) {
+                    currentLine += ' ' + word;
+                } else {
+                    lines.push(currentLine);
+                    currentLine = word;
+                }
+            }
+            lines.push(currentLine);
+            return lines;
+        }
+
         function renderCharts() {
             const filtered = getFilteredRecords();
             
@@ -2034,8 +1998,13 @@
                             x: {
                                 ticks: {
                                     font: { size: 10 },
-                                    maxRotation: 0,
-                                    minRotation: 0
+                                    maxRotation: 45,
+                                    minRotation: 45,
+                                    callback: function(val, index) {
+                                        const label = this.getLabelForValue(val);
+                                        const lines = label.split('\n');
+                                        return lines;
+                                    }
                                 }
                             }
                         }
@@ -2095,9 +2064,47 @@
                         responsive: true,
                         maintainAspectRatio: false,
                         plugins: { 
-                            legend: { display: true }
+                            legend: { display: true },
+                            tooltip: {
+                                callbacks: {
+                                    title: function(context) {
+                                        const index = context[0].dataIndex;
+                                        return data[index].name;
+                                    }
+                                }
+                            }
                         },
-                        scales: { y: { beginAtZero: true, max: 100 } }
+                        scales: { 
+                            y: { beginAtZero: true, max: 100 },
+                            x: {
+                                ticks: {
+                                    font: { size: 11 },
+                                    maxRotation: 45,
+                                    minRotation: 45,
+                                    callback: function(val, index) {
+                                        const label = this.getLabelForValue(val);
+                                        const maxCharsPerLine = 15;
+                                        if (label.length > maxCharsPerLine) {
+                                            const words = label.split(' ');
+                                            let lines = [];
+                                            let currentLine = '';
+                                            
+                                            for (let word of words) {
+                                                if ((currentLine + ' ' + word).length <= maxCharsPerLine) {
+                                                    currentLine = currentLine ? currentLine + ' ' + word : word;
+                                                } else {
+                                                    if (currentLine) lines.push(currentLine);
+                                                    currentLine = word;
+                                                }
+                                            }
+                                            if (currentLine) lines.push(currentLine);
+                                            return lines;
+                                        }
+                                        return label;
+                                    }
+                                }
+                            }
+                        }
                     },
                     plugins: [{
                         id: 'datalabels',
@@ -2249,15 +2256,31 @@
                     .sort((a, b) => b[1] - a[1])
                     .slice(0, 10);
                 
-                if (sorted.length === 0) {
-                    // Tampilkan chart kosong atau pesan
-                    return;
-                }
+                if (sorted.length === 0) return;
                 
+                const maxCharsPerLine = 20;
                 const labels = sorted.map(s => {
                     const name = s[0];
-                    return name.length > 25 ? name.substring(0, 22) + '...' : name;
+                    const words = name.split(' ');
+                    let lines = [];
+                    let currentLine = '';
+                    
+                    for (let word of words) {
+                        if ((currentLine + ' ' + word).length <= maxCharsPerLine) {
+                            currentLine = currentLine ? currentLine + ' ' + word : word;
+                        } else {
+                            if (currentLine) lines.push(currentLine);
+                            currentLine = word;
+                        }
+                    }
+                    if (currentLine) lines.push(currentLine);
+                    
+                    if (lines.length > 2) {
+                        return lines.slice(0, 2).map(l => l.length > maxCharsPerLine ? l.substring(0, maxCharsPerLine-3) + '...' : l);
+                    }
+                    return lines;
                 });
+                
                 const values = sorted.map(s => s[1]);
                 
                 chartInstances.odt = new Chart(ctx, {
@@ -2303,19 +2326,24 @@
                                         size: 11
                                     },
                                     autoSkip: false,
-                                    maxRotation: 0
-                                },
-                                afterFit: function(scale) {
-                                    scale.width = 180;
+                                    maxRotation: 0,
+                                    minRotation: 0,
+                                    callback: function(val, index) {
+                                        const label = this.getLabelForValue(val);
+                                        if (Array.isArray(label)) {
+                                            return label;
+                                        }
+                                        return label;
+                                    }
                                 }
                             }
                         },
                         layout: {
                             padding: {
-                                left: 10,
+                                left: 20,
                                 right: 60,
-                                top: 10,
-                                bottom: 10
+                                top: 20,
+                                bottom: 20
                             }
                         }
                     },
@@ -2381,10 +2409,29 @@
                 
                 if (sorted.length === 0) return;
                 
+                const maxCharsPerLine = 20;
                 const labels = sorted.map(s => {
                     const name = s[0];
-                    return name.length > 25 ? name.substring(0, 22) + '...' : name;
+                    const words = name.split(' ');
+                    let lines = [];
+                    let currentLine = '';
+                    
+                    for (let word of words) {
+                        if ((currentLine + ' ' + word).length <= maxCharsPerLine) {
+                            currentLine = currentLine ? currentLine + ' ' + word : word;
+                        } else {
+                            if (currentLine) lines.push(currentLine);
+                            currentLine = word;
+                        }
+                    }
+                    if (currentLine) lines.push(currentLine);
+                    
+                    if (lines.length > 2) {
+                        return lines.slice(0, 2).map(l => l.length > maxCharsPerLine ? l.substring(0, maxCharsPerLine-3) + '...' : l);
+                    }
+                    return lines;
                 });
+                
                 const values = sorted.map(s => s[1]);
                 
                 chartInstances.lsMesin = new Chart(ctx, {
@@ -2430,19 +2477,24 @@
                                         size: 11
                                     },
                                     autoSkip: false,
-                                    maxRotation: 0
-                                },
-                                afterFit: function(scale) {
-                                    scale.width = 180;
+                                    maxRotation: 0,
+                                    minRotation: 0,
+                                    callback: function(val, index) {
+                                        const label = this.getLabelForValue(val);
+                                        if (Array.isArray(label)) {
+                                            return label;
+                                        }
+                                        return label;
+                                    }
                                 }
                             }
                         },
                         layout: {
                             padding: {
-                                left: 10,
+                                left: 20,
                                 right: 60,
-                                top: 10,
-                                bottom: 10
+                                top: 20,
+                                bottom: 20
                             }
                         }
                     },
@@ -2501,7 +2553,6 @@
                         console.error('Error parsing LSNM data for chart:', e);
                     }
                     
-                    // Tambahkan ODT exceed
                     try {
                         if (r.odt_data) {
                             const odtData = typeof r.odt_data === 'string' ? JSON.parse(r.odt_data) : r.odt_data;
@@ -2527,10 +2578,29 @@
                 
                 if (sorted.length === 0) return;
                 
+                const maxCharsPerLine = 20;
                 const labels = sorted.map(s => {
                     const name = s[0];
-                    return name.length > 25 ? name.substring(0, 22) + '...' : name;
+                    const words = name.split(' ');
+                    let lines = [];
+                    let currentLine = '';
+                    
+                    for (let word of words) {
+                        if ((currentLine + ' ' + word).length <= maxCharsPerLine) {
+                            currentLine = currentLine ? currentLine + ' ' + word : word;
+                        } else {
+                            if (currentLine) lines.push(currentLine);
+                            currentLine = word;
+                        }
+                    }
+                    if (currentLine) lines.push(currentLine);
+                    
+                    if (lines.length > 2) {
+                        return lines.slice(0, 2).map(l => l.length > maxCharsPerLine ? l.substring(0, maxCharsPerLine-3) + '...' : l);
+                    }
+                    return lines;
                 });
+                
                 const values = sorted.map(s => s[1]);
                 
                 chartInstances.lsNonMesin = new Chart(ctx, {
@@ -2576,19 +2646,24 @@
                                         size: 11
                                     },
                                     autoSkip: false,
-                                    maxRotation: 0
-                                },
-                                afterFit: function(scale) {
-                                    scale.width = 180;
+                                    maxRotation: 0,
+                                    minRotation: 0,
+                                    callback: function(val, index) {
+                                        const label = this.getLabelForValue(val);
+                                        if (Array.isArray(label)) {
+                                            return label;
+                                        }
+                                        return label;
+                                    }
                                 }
                             }
                         },
                         layout: {
                             padding: {
-                                left: 10,
+                                left: 20,
                                 right: 60,
-                                top: 10,
-                                bottom: 10
+                                top: 20,
+                                bottom: 20
                             }
                         }
                     },
@@ -2654,10 +2729,29 @@
                 
                 if (sorted.length === 0) return;
                 
+                const maxCharsPerLine = 20;
                 const labels = sorted.map(s => {
                     const name = s[0];
-                    return name.length > 25 ? name.substring(0, 22) + '...' : name;
+                    const words = name.split(' ');
+                    let lines = [];
+                    let currentLine = '';
+                    
+                    for (let word of words) {
+                        if ((currentLine + ' ' + word).length <= maxCharsPerLine) {
+                            currentLine = currentLine ? currentLine + ' ' + word : word;
+                        } else {
+                            if (currentLine) lines.push(currentLine);
+                            currentLine = word;
+                        }
+                    }
+                    if (currentLine) lines.push(currentLine);
+                    
+                    if (lines.length > 2) {
+                        return lines.slice(0, 2).map(l => l.length > maxCharsPerLine ? l.substring(0, maxCharsPerLine-3) + '...' : l);
+                    }
+                    return lines;
                 });
+                
                 const values = sorted.map(s => s[1]);
                 
                 chartInstances.minorStop = new Chart(ctx, {
@@ -2703,19 +2797,24 @@
                                         size: 11
                                     },
                                     autoSkip: false,
-                                    maxRotation: 0
-                                },
-                                afterFit: function(scale) {
-                                    scale.width = 180;
+                                    maxRotation: 0,
+                                    minRotation: 0,
+                                    callback: function(val, index) {
+                                        const label = this.getLabelForValue(val);
+                                        if (Array.isArray(label)) {
+                                            return label;
+                                        }
+                                        return label;
+                                    }
                                 }
                             }
                         },
                         layout: {
                             padding: {
-                                left: 10,
+                                left: 20,
                                 right: 60,
-                                top: 10,
-                                bottom: 10
+                                top: 20,
+                                bottom: 20
                             }
                         }
                     },
@@ -2753,9 +2852,6 @@
             }
         }
 
-        // =============================================
-        // INPUT PAGE FUNCTIONS
-        // =============================================
         let currentMachineData = null;
         let currentMachineDetails = null;
         let customLSMCounter = 0;
@@ -3565,9 +3661,6 @@
             showToast('Form reset', 'success');
         }
 
-        // =============================================
-        // MANAGEMENT FUNCTIONS
-        // =============================================
         function unlockManagement() {
             const password = document.getElementById('mgmt-password').value;
             if (password === MANAGEMENT_PASSWORD) {
@@ -3884,9 +3977,6 @@
             }
         }
 
-        // =============================================
-        // EXPORT FUNCTIONS
-        // =============================================
         function exportData() {
             const startDate = document.getElementById('export-start-date')?.value;
             const endDate = document.getElementById('export-end-date')?.value;
@@ -4079,9 +4169,6 @@
             }
         }
 
-        // =============================================
-        // FILTER & NAVIGATION FUNCTIONS
-        // =============================================
         function updateFilter(key, value) {
             filters[key] = value;
             renderApp();
@@ -4114,9 +4201,6 @@
             renderApp();
         }
 
-        // =============================================
-        // INITIALIZATION
-        // =============================================
         async function initializeApp() {
             try {
                 initializeTheme();
