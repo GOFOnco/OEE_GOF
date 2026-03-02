@@ -559,12 +559,24 @@
             cursor: pointer;
             transition: background-color 0.2s;
         }
+        
         .clickable-row:hover {
-            background-color: var(--accent-primary) !important;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)) !important;
             color: white;
         }
+        
         .clickable-row:hover td {
             color: white;
+        }
+        
+        .clickable-row:hover .status-good,
+        .clickable-row:hover .status-bad {
+            color: white;
+        }
+        
+        .active-filter-row {
+            background: linear-gradient(135deg, rgba(102, 125, 234, 0.2), rgba(118, 75, 162, 0.2)) !important;
+            border-left: 4px solid var(--accent-primary);
         }
     </style>
 </head>
@@ -643,10 +655,12 @@
             shift: 'all',
             machine: 'all',
             pic: 'all',
-            // Filter tambahan untuk detail line stop
-            detailLineStopItem: 'all',      // Item yang dipilih (misal: "SETUP MESIN")
-            detailLineStopType: 'all'        // Tipe line stop: 'mesin' atau 'non_mesin'
+            detailLineStopItem: 'all',
+            detailLineStopType: 'all'
         };
+
+        // Variable untuk menyimpan filter dari OEE history yang diklik
+        let clickedRecordFilter = null;
 
         function showToast(message, type = 'success') {
             const toast = document.createElement('div');
@@ -1006,6 +1020,42 @@
             };
         }
 
+        // Fungsi untuk mengatur filter berdasarkan record OEE yang diklik
+        function filterByClickedRecord(record) {
+            clickedRecordFilter = {
+                date: record.date,
+                shift: record.shift,
+                machine: record.machine_name,
+                pic: record.pic
+            };
+            
+            // Update filters dengan nilai dari record yang diklik
+            filters.startDate = record.date;
+            filters.endDate = record.date;
+            filters.shift = record.shift;
+            filters.machine = record.machine_name;
+            filters.pic = record.pic;
+            
+            // Reset detail filter
+            filters.detailLineStopItem = 'all';
+            filters.detailLineStopType = 'all';
+            
+            renderApp();
+            showToast(`Menampilkan data untuk: ${record.machine_name} - Shift ${record.shift} - ${new Date(record.date).toLocaleDateString('id-ID')}`, 'success');
+        }
+
+        // Fungsi untuk mereset filter dari klik record
+        function resetClickedFilter() {
+            clickedRecordFilter = null;
+            filters.startDate = getCurrentMonthStart();
+            filters.endDate = getCurrentMonthEnd();
+            filters.shift = 'all';
+            filters.machine = 'all';
+            filters.pic = 'all';
+            renderApp();
+            showToast('Filter direset ke periode bulan berjalan', 'success');
+        }
+
         function renderApp() {
             const app = document.getElementById('app-wrapper');
             const config = defaultConfig;
@@ -1075,11 +1125,17 @@
             const lsNonMesinTotal = calculateLineStopNonMesinTotal(filtered);
             const minorStopTotal = calculateMinorStopTotal(filtered);
             
-            // Tampilkan info filter detail jika ada
             const detailFilterInfo = (filters.detailLineStopItem !== 'all') 
                 ? `<div style="margin-top: 16px; padding: 12px; background: rgba(102, 125, 234, 0.2); border-radius: 8px; border-left: 4px solid var(--accent-primary);">
                      <span style="color: var(--text-primary); font-size: 14px;">🔍 Filter Detail: Menampilkan data untuk item <strong>${filters.detailLineStopItem}</strong> (${filters.detailLineStopType === 'mesin' ? 'Line Stop Mesin' : 'Line Stop Non Mesin'})</span>
                      <button class="btn btn-secondary" style="margin-left: 16px; padding: 4px 12px;" onclick="clearDetailFilter()">Reset Filter</button>
+                   </div>`
+                : '';
+            
+            const clickedFilterInfo = clickedRecordFilter 
+                ? `<div style="margin-top: 16px; padding: 12px; background: rgba(16, 185, 129, 0.2); border-radius: 8px; border-left: 4px solid var(--success); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                     <span style="color: var(--text-primary); font-size: 14px;">🔍 Filter dari Record: Menampilkan data untuk <strong>${clickedRecordFilter.machine}</strong> - Shift <strong>${clickedRecordFilter.shift}</strong> - Tanggal <strong>${new Date(clickedRecordFilter.date).toLocaleDateString('id-ID')}</strong></span>
+                     <button class="btn btn-secondary" style="padding: 4px 12px;" onclick="resetClickedFilter()">Reset Filter</button>
                    </div>`
                 : '';
             
@@ -1091,11 +1147,11 @@
                         </div>
                         <div class="filter-section">
                             <div>
-                                <label class="label">Start Date (Awal Bulan)</label>
+                                <label class="label">Start Date</label>
                                 <input type="date" id="filter-start-date" value="${filters.startDate}" class="input-field" onchange="updateFilter('startDate', this.value)">
                             </div>
                             <div>
-                                <label class="label">End Date (Akhir Bulan)</label>
+                                <label class="label">End Date</label>
                                 <input type="date" id="filter-end-date" value="${filters.endDate}" class="input-field" onchange="updateFilter('endDate', this.value)">
                             </div>
                             <div>
@@ -1125,13 +1181,11 @@
                                 <span style="color: var(--accent-primary); font-weight: 600;">📅</span>
                                 <span style="color: var(--text-primary); font-size: 14px; word-break: break-word;">
                                     Menampilkan data dari <strong>${startDateDisplay}</strong> hingga <strong>${endDateDisplay}</strong>
-                                    <span style="color: var(--text-secondary); font-size: 13px; display: block; margin-top: 4px;">
-                                        Filter otomatis diatur ke periode bulan berjalan
-                                    </span>
                                 </span>
                             </div>
                         </div>
                         ${detailFilterInfo}
+                        ${clickedFilterInfo}
                     </div>
                     
                     <div class="card">
@@ -1519,8 +1573,15 @@
             }
             
             return records.map(r => {
+                // Cek apakah record ini sedang difilter (untuk highlight)
+                const isActiveFilter = clickedRecordFilter && 
+                    clickedRecordFilter.date === r.date && 
+                    clickedRecordFilter.shift === r.shift && 
+                    clickedRecordFilter.machine === r.machine_name && 
+                    clickedRecordFilter.pic === r.pic;
+                
                 return `
-                    <tr>
+                    <tr class="clickable-row ${isActiveFilter ? 'active-filter-row' : ''}" onclick='filterByClickedRecord(${JSON.stringify(r).replace(/'/g, "\\'")})' title="Klik untuk menampilkan semua data dengan filter ini">
                         <td class="wrap-text">${r.date ? new Date(r.date).toLocaleDateString('id-ID') : '-'}</td>
                         <td class="wrap-text">${r.shift || '-'}</td>
                         <td class="wrap-text"><strong>${r.machine_name || '-'}</strong></td>
@@ -1573,13 +1634,11 @@
                 return '<tr><td colspan="9" style="text-align: center; color: var(--text-secondary); padding: 40px;">No line stop mesin records found for this period</td></tr>';
             }
             
-            // Filter berdasarkan item yang dipilih di detail
             const filteredRows = (filters.detailLineStopItem !== 'all' && filters.detailLineStopType === 'mesin')
                 ? rows.filter(row => row.lineStop === filters.detailLineStopItem)
                 : rows;
             
             return filteredRows.map(row => {
-                // Tambahkan class 'clickable-row' dan data atribut untuk filter
                 const itemName = row.lineStop;
                 return `
                     <tr class="clickable-row" onclick="setDetailFilter('${itemName.replace(/'/g, "\\'")}', 'mesin')" title="Klik untuk melihat semua data item ini">
@@ -1654,13 +1713,11 @@
                 return '<tr><td colspan="8" style="text-align: center; color: var(--text-secondary); padding: 40px;">No line stop non mesin records found for this period</td></tr>';
             }
             
-            // Filter berdasarkan item yang dipilih di detail
             const filteredRows = (filters.detailLineStopItem !== 'all' && filters.detailLineStopType === 'non_mesin')
                 ? rows.filter(row => row.lineStop === filters.detailLineStopItem)
                 : rows;
             
             return filteredRows.map(row => {
-                // Tambahkan class 'clickable-row' dan data atribut untuk filter
                 const itemName = row.lineStop;
                 return `
                     <tr class="clickable-row" onclick="setDetailFilter('${itemName.replace(/'/g, "\\'")}', 'non_mesin')" title="Klik untuk melihat semua data item ini">
@@ -1677,15 +1734,13 @@
             }).join('');
         }
 
-        // Fungsi untuk mengatur filter berdasarkan item line stop yang diklik
         function setDetailFilter(item, type) {
             filters.detailLineStopItem = item;
             filters.detailLineStopType = type;
-            renderApp(); // Render ulang dashboard dengan filter baru
+            renderApp();
             showToast(`Menampilkan detail untuk: ${item}`, 'success');
         }
 
-        // Fungsi untuk menghapus filter detail
         function clearDetailFilter() {
             filters.detailLineStopItem = 'all';
             filters.detailLineStopType = 'all';
@@ -1949,7 +2004,6 @@
             `;
         }
 
-        // Fungsi untuk wrap text di canvas (Chart.js)
         function wrapText(ctx, text, maxWidth) {
             const words = text.split(' ');
             const lines = [];
@@ -4229,6 +4283,8 @@
 
         function updateFilter(key, value) {
             filters[key] = value;
+            // Reset clicked record filter jika user mengubah filter manual
+            clickedRecordFilter = null;
             renderApp();
         }
 
@@ -4248,7 +4304,6 @@
                 return dateMatch && shiftMatch && machineMatch && picMatch;
             });
 
-            // Filter berdasarkan detail line stop jika ada
             if (filters.detailLineStopItem !== 'all') {
                 records = records.filter(r => {
                     let match = false;
@@ -4301,9 +4356,11 @@
                 isManagementUnlocked = false;
             }
             
-            // Reset filter detail saat pindah halaman
             filters.detailLineStopItem = 'all';
             filters.detailLineStopType = 'all';
+            
+            // Reset clicked record filter saat pindah halaman
+            clickedRecordFilter = null;
             
             renderApp();
         }
