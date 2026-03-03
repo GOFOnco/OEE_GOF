@@ -1110,8 +1110,21 @@
         function renderDashboard() {
             const filtered = getFilteredRecords();
             
-            const avgOEEActual = filtered.length > 0 ? filtered.reduce((sum, r) => sum + (r.oee_actual || 0), 0) / filtered.length : 0;
-            const avgOEE365 = filtered.length > 0 ? filtered.reduce((sum, r) => sum + (r.oee_365 || 0), 0) / filtered.length : 0;
+            // HITUNG RATA-RATA KOMPONEN DULU (untuk konsistensi matematis)
+            const totalA = filtered.reduce((sum, r) => sum + (r.availability_actual || 0), 0);
+            const totalP = filtered.reduce((sum, r) => sum + (r.performance || 0), 0);
+            const totalQ = filtered.reduce((sum, r) => sum + (r.quality || 0), 0);
+            const totalA365 = filtered.reduce((sum, r) => sum + (r.availability_365 || 0), 0);
+            
+            const avgA = filtered.length > 0 ? totalA / filtered.length : 0;
+            const avgP = filtered.length > 0 ? totalP / filtered.length : 0;
+            const avgQ = filtered.length > 0 ? totalQ / filtered.length : 0;
+            const avgA365 = filtered.length > 0 ? totalA365 / filtered.length : 0;
+            
+            // OEE = PERKALIAN rata-rata komponen (KONSISTEN dengan definisi)
+            const avgOEEActual = (avgA * avgP * avgQ) / 10000;
+            const avgOEE365 = (avgA365 * avgP * avgQ) / 10000;
+            
             const totalOutput = filtered.reduce((sum, r) => sum + (r.actual_output || 0), 0);
             
             const uniquePICs = [...new Set(allOEERecords.map(r => r.pic).filter(Boolean))];
@@ -1193,7 +1206,7 @@
                             <div class="scorecard ${avgOEEActual >= 88 ? 'good' : 'bad'}">
                                 <div class="scorecard-label">Average OEE Actual</div>
                                 <div class="scorecard-value">${avgOEEActual.toFixed(1)}%</div>
-                                <div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">Target: 88%</div>
+                                <div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">A:${avgA.toFixed(1)}% P:${avgP.toFixed(1)}% Q:${avgQ.toFixed(1)}%</div>
                             </div>
                             <div class="scorecard ${avgOEE365 >= 55 ? 'good' : 'bad'}">
                                 <div class="scorecard-label">Average OEE 365</div>
@@ -1239,6 +1252,9 @@
                         <div class="card">
                             <div class="card-header">
                                 <div class="card-header-left">📊 A-P-Q-A365 Breakdown</div>
+                                <div class="card-header-right">
+                                    OEE = ${avgOEEActual.toFixed(1)}% 
+                                </div>
                             </div>
                             <div class="chart-container">
                                 <canvas id="chart-apq"></canvas>
@@ -2295,6 +2311,7 @@
             if (!ctx) return;
             
             try {
+                // Hitung rata-rata komponen (KONSISTEN dengan scorecard)
                 const avgA = records.length > 0 ? records.reduce((sum, r) => sum + (r.availability_actual || 0), 0) / records.length : 0;
                 const avgP = records.length > 0 ? records.reduce((sum, r) => sum + (r.performance || 0), 0) / records.length : 0;
                 const avgQ = records.length > 0 ? records.reduce((sum, r) => sum + (r.quality || 0), 0) / records.length : 0;
