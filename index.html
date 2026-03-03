@@ -1218,7 +1218,8 @@
                     <div class="grid-2">
                         <div class="card">
                             <div class="card-header">
-                                <div class="card-header-left">📈 OEE Trend (Oldest to Newest)</div>
+                                <div class="card-header-left">📈 Rata-rata OEE per Bulan (Tahun Berjalan) - Semua Data</div>
+                                <div class="card-header-right">Tidak terpengaruh filter</div>
                             </div>
                             <div class="chart-container">
                                 <canvas id="chart-trend"></canvas>
@@ -2035,7 +2036,7 @@
             });
             chartInstances = {};
             
-            renderTrendChart(filtered);
+            renderTrendChart(); // Tidak menggunakan filtered
             renderPerMachineChart(filtered);
             renderAPQChart(filtered);
             renderODTChart(filtered);
@@ -2044,30 +2045,65 @@
             renderMinorStopChart(filtered);
         }
 
-        function renderTrendChart(records) {
+        function renderTrendChart() {
             const ctx = document.getElementById('chart-trend');
             if (!ctx) return;
             
             try {
-                const sorted = [...records].sort((a, b) => new Date(a.date) - new Date(b.date));
-                const labels = sorted.map(r => {
-                    const date = new Date(r.date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' });
-                    const shift = r.shift ? r.shift.replace('Shift ', 'S').replace('Longshift ', 'LS ') : '';
-                    return `${date}\n${shift}`;
+                // Gunakan SEMUA data, tidak terpengaruh filter
+                const currentYear = new Date().getFullYear();
+                const recordsThisYear = allOEERecords.filter(r => {
+                    const recordYear = new Date(r.date).getFullYear();
+                    return recordYear === currentYear;
                 });
-                const data = sorted.map(r => r.oee_actual || 0);
+
+                // Kelompokkan data per bulan
+                const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+                const monthlyData = {};
                 
-                if (data.length === 0) return;
+                // Inisialisasi semua bulan dengan array kosong
+                for (let i = 0; i < 12; i++) {
+                    monthlyData[i] = [];
+                }
+
+                // Kelompokkan OEE per bulan
+                recordsThisYear.forEach(r => {
+                    const month = new Date(r.date).getMonth(); // 0-11
+                    monthlyData[month].push(r.oee_actual || 0);
+                });
+
+                // Hitung rata-rata per bulan
+                const monthlyAvg = [];
+                const months = [];
                 
-                const pointColors = data.map(value => value >= 88 ? '#10b981' : '#ef4444');
+                for (let i = 0; i < 12; i++) {
+                    const monthRecords = monthlyData[i];
+                    if (monthRecords.length > 0) {
+                        const avg = monthRecords.reduce((sum, val) => sum + val, 0) / monthRecords.length;
+                        monthlyAvg.push(avg);
+                    } else {
+                        monthlyAvg.push(null); // Tidak ada data
+                    }
+                    months.push(monthNames[i]);
+                }
+
+                // Filter bulan yang memiliki data
+                const hasDataIndices = monthlyAvg.map((val, idx) => val !== null);
                 
+                if (hasDataIndices.filter(v => v).length === 0) return;
+
+                // Buat dataset dengan warna berdasarkan target
+                const pointColors = monthlyAvg.map(value => 
+                    value !== null && value >= 88 ? '#10b981' : '#ef4444'
+                );
+
                 chartInstances.trend = new Chart(ctx, {
                     type: 'line',
                     data: {
-                        labels,
+                        labels: months,
                         datasets: [{
-                            label: 'OEE Actual',
-                            data,
+                            label: 'Rata-rata OEE per Bulan',
+                            data: monthlyAvg,
                             borderColor: '#667eea',
                             backgroundColor: 'rgba(102, 125, 234, 0.1)',
                             tension: 0.4,
@@ -2075,13 +2111,15 @@
                             pointBackgroundColor: pointColors,
                             pointBorderColor: pointColors,
                             pointRadius: 6,
-                            pointHoverRadius: 8
+                            pointHoverRadius: 8,
+                            spanGaps: true // Lewati titik null
                         }, {
                             label: 'Target 88%',
-                            data: Array(labels.length).fill(88),
+                            data: Array(12).fill(88),
                             borderColor: '#10b981',
                             borderDash: [5, 5],
-                            pointRadius: 0
+                            pointRadius: 0,
+                            fill: false
                         }]
                     },
                     options: {
@@ -2092,31 +2130,30 @@
                             tooltip: {
                                 callbacks: {
                                     title: function(context) {
-                                        const index = context[0].dataIndex;
-                                        const record = sorted[index];
-                                        const date = new Date(record.date).toLocaleDateString('id-ID', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' });
-                                        return `${date} - ${record.shift || ''}`;
+                                        const monthIndex = context[0].dataIndex;
+                                        return `${monthNames[monthIndex]} ${currentYear}`;
                                     },
-                                    afterTitle: function(context) {
-                                        const index = context[0].dataIndex;
-                                        const record = sorted[index];
-                                        return `Machine: ${record.machine_name || ''} | PIC: ${record.pic || ''}`;
+                                    label: function(context) {
+                                        const value = context.raw;
+                                        if (value === null) return 'Tidak ada data';
+                                        return `Rata-rata OEE: ${value.toFixed(1)}%`;
                                     }
                                 }
                             }
                         },
                         scales: {
-                            y: { beginAtZero: true, max: 100 },
+                            y: { 
+                                beginAtZero: true, 
+                                max: 100,
+                                title: {
+                                    display: true,
+                                    text: 'OEE (%)'
+                                }
+                            },
                             x: {
-                                ticks: {
-                                    font: { size: 10 },
-                                    maxRotation: 45,
-                                    minRotation: 45,
-                                    callback: function(val, index) {
-                                        const label = this.getLabelForValue(val);
-                                        const lines = label.split('\n');
-                                        return lines;
-                                    }
+                                title: {
+                                    display: true,
+                                    text: 'Bulan'
                                 }
                             }
                         }
