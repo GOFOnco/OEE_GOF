@@ -1110,21 +1110,8 @@
         function renderDashboard() {
             const filtered = getFilteredRecords();
             
-            // HITUNG RATA-RATA KOMPONEN DULU (untuk konsistensi matematis)
-            const totalA = filtered.reduce((sum, r) => sum + (r.availability_actual || 0), 0);
-            const totalP = filtered.reduce((sum, r) => sum + (r.performance || 0), 0);
-            const totalQ = filtered.reduce((sum, r) => sum + (r.quality || 0), 0);
-            const totalA365 = filtered.reduce((sum, r) => sum + (r.availability_365 || 0), 0);
-            
-            const avgA = filtered.length > 0 ? totalA / filtered.length : 0;
-            const avgP = filtered.length > 0 ? totalP / filtered.length : 0;
-            const avgQ = filtered.length > 0 ? totalQ / filtered.length : 0;
-            const avgA365 = filtered.length > 0 ? totalA365 / filtered.length : 0;
-            
-            // OEE = PERKALIAN rata-rata komponen (KONSISTEN dengan definisi)
-            const avgOEEActual = (avgA * avgP * avgQ) / 10000;
-            const avgOEE365 = (avgA365 * avgP * avgQ) / 10000;
-            
+            const avgOEEActual = filtered.length > 0 ? filtered.reduce((sum, r) => sum + (r.oee_actual || 0), 0) / filtered.length : 0;
+            const avgOEE365 = filtered.length > 0 ? filtered.reduce((sum, r) => sum + (r.oee_365 || 0), 0) / filtered.length : 0;
             const totalOutput = filtered.reduce((sum, r) => sum + (r.actual_output || 0), 0);
             
             const uniquePICs = [...new Set(allOEERecords.map(r => r.pic).filter(Boolean))];
@@ -1206,7 +1193,7 @@
                             <div class="scorecard ${avgOEEActual >= 88 ? 'good' : 'bad'}">
                                 <div class="scorecard-label">Average OEE Actual</div>
                                 <div class="scorecard-value">${avgOEEActual.toFixed(1)}%</div>
-                                <div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">A:${avgA.toFixed(1)}% P:${avgP.toFixed(1)}% Q:${avgQ.toFixed(1)}%</div>
+                                <div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">Target: 88%</div>
                             </div>
                             <div class="scorecard ${avgOEE365 >= 55 ? 'good' : 'bad'}">
                                 <div class="scorecard-label">Average OEE 365</div>
@@ -1231,8 +1218,8 @@
                     <div class="grid-2">
                         <div class="card">
                             <div class="card-header">
-                                <div class="card-header-left">📈 Rata-rata OEE per Bulan (Tahun Berjalan)</div>
-                                <div class="card-header-right">Filter: Shift, Machine, PIC (kecuali Tanggal)</div>
+                                <div class="card-header-left">📈 Rata-rata OEE per Bulan (Tahun Berjalan) - Semua Data</div>
+                                <div class="card-header-right">Tidak terpengaruh filter</div>
                             </div>
                             <div class="chart-container">
                                 <canvas id="chart-trend"></canvas>
@@ -1252,9 +1239,6 @@
                         <div class="card">
                             <div class="card-header">
                                 <div class="card-header-left">📊 A-P-Q-A365 Breakdown</div>
-                                <div class="card-header-right" style="font-size: 11px; background: rgba(102, 125, 234, 0.15);">
-                                    Target: A=95% | P=95% | Q=98% | A365=60%
-                                </div>
                             </div>
                             <div class="chart-container">
                                 <canvas id="chart-apq"></canvas>
@@ -2052,7 +2036,7 @@
             });
             chartInstances = {};
             
-            renderTrendChart(); // Akan pake filtered tapi dengan logika khusus
+            renderTrendChart(); // Tidak menggunakan filtered
             renderPerMachineChart(filtered);
             renderAPQChart(filtered);
             renderODTChart(filtered);
@@ -2066,26 +2050,11 @@
             if (!ctx) return;
             
             try {
-                // Filter data: HANYA tahun berjalan, tapi tetap perhatikan filter shift, machine, PIC
+                // Gunakan SEMUA data, tidak terpengaruh filter
                 const currentYear = new Date().getFullYear();
-                
-                // Ambil data dengan filter: tahun berjalan + shift + machine + pic (kecuali tanggal)
                 const recordsThisYear = allOEERecords.filter(r => {
                     const recordYear = new Date(r.date).getFullYear();
-                    
-                    // Cek tahun
-                    if (recordYear !== currentYear) return false;
-                    
-                    // Cek shift (jika difilter)
-                    if (filters.shift !== 'all' && r.shift !== filters.shift) return false;
-                    
-                    // Cek machine (jika difilter)
-                    if (filters.machine !== 'all' && r.machine_name !== filters.machine) return false;
-                    
-                    // Cek PIC (jika difilter)
-                    if (filters.pic !== 'all' && r.pic !== filters.pic) return false;
-                    
-                    return true;
+                    return recordYear === currentYear;
                 });
 
                 // Kelompokkan data per bulan
@@ -2326,13 +2295,6 @@
             if (!ctx) return;
             
             try {
-                // TARGET BARU
-                const TARGET_A = 95;
-                const TARGET_P = 95;
-                const TARGET_Q = 98;
-                const TARGET_A365 = 60;
-                
-                // Hitung rata-rata komponen
                 const avgA = records.length > 0 ? records.reduce((sum, r) => sum + (r.availability_actual || 0), 0) / records.length : 0;
                 const avgP = records.length > 0 ? records.reduce((sum, r) => sum + (r.performance || 0), 0) / records.length : 0;
                 const avgQ = records.length > 0 ? records.reduce((sum, r) => sum + (r.quality || 0), 0) / records.length : 0;
@@ -2341,20 +2303,15 @@
                 chartInstances.apq = new Chart(ctx, {
                     type: 'bar',
                     data: {
-                        labels: [
-                            `Availability`, 
-                            `Performance`, 
-                            `Quality`, 
-                            `Availability 365`
-                        ],
+                        labels: ['Availability', 'Performance', 'Quality', 'Availability 365'],
                         datasets: [{
                             label: 'Average %',
                             data: [avgA, avgP, avgQ, avgA365],
                             backgroundColor: [
-                                avgA >= TARGET_A ? '#10b981' : '#ef4444',
-                                avgP >= TARGET_P ? '#10b981' : '#ef4444',
-                                avgQ >= TARGET_Q ? '#10b981' : '#ef4444',
-                                avgA365 >= TARGET_A365 ? '#10b981' : '#ef4444'
+                                avgA >= 93 ? '#10b981' : '#ef4444',
+                                avgP >= 98 ? '#10b981' : '#ef4444',
+                                avgQ >= 99 ? '#10b981' : '#ef4444',
+                                '#667eea'
                             ]
                         }]
                     },
@@ -2366,15 +2323,7 @@
                             tooltip: {
                                 callbacks: {
                                     label: function(context) {
-                                        const value = context.raw;
-                                        const target = context.label.includes('Availability 365') ? TARGET_A365 : 
-                                                      context.label.includes('Quality') ? TARGET_Q :
-                                                      context.label.includes('Performance') ? TARGET_P : TARGET_A;
-                                        return [
-                                            `${context.dataset.label}: ${value.toFixed(1)}%`,
-                                            `Target: ${target}%`,
-                                            `Status: ${value >= target ? '✓ Mencapai target' : '✗ Di bawah target'}`
-                                        ];
+                                        return `${context.dataset.label}: ${context.raw.toFixed(1)}%`;
                                     }
                                 }
                             }
