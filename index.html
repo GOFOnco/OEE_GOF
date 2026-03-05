@@ -591,6 +591,22 @@
             align-items: center;
             gap: 8px;
         }
+        
+        .target-info {
+            font-size: 12px;
+            color: var(--text-secondary);
+            background: rgba(16, 185, 129, 0.1);
+            padding: 4px 10px;
+            border-radius: 16px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .target-info strong {
+            color: var(--success);
+            margin-right: 4px;
+        }
     </style>
 </head>
 <body class="h-full">
@@ -1167,7 +1183,14 @@
         function renderDashboard() {
             const filtered = getFilteredRecords();
             
-            const avgOEEActual = filtered.length > 0 ? filtered.reduce((sum, r) => sum + (r.oee_actual || 0), 0) / filtered.length : 0;
+            // Hitung rata-rata Availability, Performance, Quality dari filtered records
+            const avgA = filtered.length > 0 ? filtered.reduce((sum, r) => sum + (r.availability_actual || 0), 0) / filtered.length : 0;
+            const avgP = filtered.length > 0 ? filtered.reduce((sum, r) => sum + (r.performance || 0), 0) / filtered.length : 0;
+            const avgQ = filtered.length > 0 ? filtered.reduce((sum, r) => sum + (r.quality || 0), 0) / filtered.length : 0;
+            
+            // Hitung OEE Actual dari perkalian A x P x Q (sama seperti di chart)
+            const calculatedOEEActual = (avgA * avgP * avgQ) / 10000;
+            
             const avgOEE365 = filtered.length > 0 ? filtered.reduce((sum, r) => sum + (r.oee_365 || 0), 0) / filtered.length : 0;
             const totalOutput = filtered.reduce((sum, r) => sum + (r.actual_output || 0), 0);
             
@@ -1247,10 +1270,10 @@
                     
                     <div class="card">
                         <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; margin-bottom: 24px;">
-                            <div class="scorecard ${avgOEEActual >= 88 ? 'good' : 'bad'}">
+                            <div class="scorecard ${calculatedOEEActual >= 88 ? 'good' : 'bad'}">
                                 <div class="scorecard-label">Average OEE Actual</div>
-                                <div class="scorecard-value">${avgOEEActual.toFixed(1)}%</div>
-                                <div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">Target: 88%</div>
+                                <div class="scorecard-value">${calculatedOEEActual.toFixed(1)}%</div>
+                                <div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">Target: 88% (dari A×P×Q)</div>
                             </div>
                             <div class="scorecard ${avgOEE365 >= 55 ? 'good' : 'bad'}">
                                 <div class="scorecard-label">Average OEE 365</div>
@@ -1275,7 +1298,8 @@
                     <div class="grid-2">
                         <div class="card">
                             <div class="card-header">
-                                <div class="card-header-left">📈 AVG OEE per Bulan</div>
+                                <div class="card-header-left">📈 Rata-rata OEE per Bulan (Tahun Berjalan) - Semua Data</div>
+                                <div class="card-header-right">Tidak terpengaruh filter</div>
                             </div>
                             <div class="chart-container">
                                 <canvas id="chart-trend"></canvas>
@@ -1295,6 +1319,12 @@
                         <div class="card">
                             <div class="card-header">
                                 <div class="card-header-left">📊 A-P-Q-A365 Breakdown</div>
+                                <div class="card-header-right">
+                                    <span class="target-info"><strong>A:</strong>95%</span>
+                                    <span class="target-info"><strong>P:</strong>95%</span>
+                                    <span class="target-info"><strong>Q:</strong>98%</span>
+                                    <span class="target-info"><strong>A365:</strong>60%</span>
+                                </div>
                             </div>
                             <div class="chart-container">
                                 <canvas id="chart-apq"></canvas>
@@ -2368,10 +2398,10 @@
                             label: 'Average %',
                             data: [avgA, avgP, avgQ, avgA365],
                             backgroundColor: [
-                                avgA >= 93 ? '#10b981' : '#ef4444',
-                                avgP >= 98 ? '#10b981' : '#ef4444',
-                                avgQ >= 99 ? '#10b981' : '#ef4444',
-                                '#667eea'
+                                avgA >= 95 ? '#10b981' : '#ef4444',
+                                avgP >= 95 ? '#10b981' : '#ef4444',
+                                avgQ >= 98 ? '#10b981' : '#ef4444',
+                                avgA365 >= 60 ? '#10b981' : '#ef4444'
                             ]
                         }]
                     },
