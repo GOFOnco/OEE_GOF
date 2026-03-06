@@ -1000,6 +1000,7 @@
                 });
             }
             
+            // Tambahkan ODT exceed ke total line stop non mesin untuk perhitungan
             odtExceeds.forEach(exceed => {
                 totalLineStopNonMesin += exceed.duration;
             });
@@ -1527,23 +1528,6 @@
                 } catch (e) {
                     console.error('Error calculating LSNM total:', e);
                 }
-                
-                try {
-                    if (r.odt_data) {
-                        const odtData = typeof r.odt_data === 'string' ? JSON.parse(r.odt_data) : r.odt_data;
-                        odtData.forEach(odt => {
-                            if (odt.checked) {
-                                const actualTime = parseFloat(odt.actualTime || 0);
-                                const standardTime = parseFloat(odt.standardTime || 0);
-                                if (actualTime > standardTime) {
-                                    total += (actualTime - standardTime);
-                                }
-                            }
-                        });
-                    }
-                } catch (e) {
-                    console.error('Error calculating ODT exceed:', e);
-                }
             });
             return total;
         }
@@ -1687,6 +1671,7 @@
 
         function generateLineStopMesinRows(records) {
             const rows = [];
+            const seen = new Set(); // Untuk mencegah duplikasi
             
             records.forEach(r => {
                 try {
@@ -1695,17 +1680,23 @@
                         
                         lsData.forEach(ls => {
                             if (ls.duration && parseFloat(ls.duration) > 0) {
-                                rows.push({
-                                    date: r.date ? new Date(r.date).toLocaleDateString('id-ID') : '-',
-                                    shift: r.shift || '-',
-                                    machine: r.machine_name || '-',
-                                    pic: r.pic || '-',
-                                    batch: r.batch_number || '-',
-                                    lineStop: ls.item || '-',
-                                    action: ls.action || '-',
-                                    durasi: parseFloat(ls.duration || 0).toFixed(1),
-                                    wr: ls.wr || '-'
-                                });
+                                // Buat unique key untuk mencegah duplikasi
+                                const key = `${r.id}-${ls.item}-${ls.duration}-${ls.action || ''}`;
+                                if (!seen.has(key)) {
+                                    seen.add(key);
+                                    rows.push({
+                                        id: r.id,
+                                        date: r.date ? new Date(r.date).toLocaleDateString('id-ID') : '-',
+                                        shift: r.shift || '-',
+                                        machine: r.machine_name || '-',
+                                        pic: r.pic || '-',
+                                        batch: r.batch_number || '-',
+                                        lineStop: ls.item || '-',
+                                        action: ls.action || '-',
+                                        durasi: parseFloat(ls.duration || 0).toFixed(1),
+                                        wr: ls.wr || '-'
+                                    });
+                                }
                             }
                         });
                     }
@@ -1744,45 +1735,30 @@
 
         function generateLineStopNonMesinRows(records) {
             const rows = [];
+            const seen = new Set(); // Untuk mencegah duplikasi
             
             records.forEach(r => {
                 try {
+                    // Hanya baca dari line_stop_non_mesin_data - tidak perlu baca dari ODT lagi karena sudah tersimpan di sini
                     if (r.line_stop_non_mesin_data) {
                         const lsData = typeof r.line_stop_non_mesin_data === 'string' ? JSON.parse(r.line_stop_non_mesin_data) : r.line_stop_non_mesin_data;
                         
                         lsData.forEach(ls => {
                             if (ls.duration && parseFloat(ls.duration) > 0) {
-                                rows.push({
-                                    date: r.date ? new Date(r.date).toLocaleDateString('id-ID') : '-',
-                                    shift: r.shift || '-',
-                                    machine: r.machine_name || '-',
-                                    pic: r.pic || '-',
-                                    batch: r.batch_number || '-',
-                                    lineStop: ls.item || '-',
-                                    action: ls.action || '-',
-                                    durasi: parseFloat(ls.duration || 0).toFixed(1)
-                                });
-                            }
-                        });
-                    }
-                    
-                    if (r.odt_data) {
-                        const odtData = typeof r.odt_data === 'string' ? JSON.parse(r.odt_data) : r.odt_data;
-                        odtData.forEach(odt => {
-                            if (odt.checked) {
-                                const actualTime = parseFloat(odt.actualTime || 0);
-                                const standardTime = parseFloat(odt.standardTime || 0);
-                                if (actualTime > standardTime) {
-                                    const exceed = actualTime - standardTime;
+                                // Buat unique key untuk mencegah duplikasi
+                                const key = `${r.id}-${ls.item}-${ls.duration}-${ls.action || ''}`;
+                                if (!seen.has(key)) {
+                                    seen.add(key);
                                     rows.push({
+                                        id: r.id,
                                         date: r.date ? new Date(r.date).toLocaleDateString('id-ID') : '-',
                                         shift: r.shift || '-',
                                         machine: r.machine_name || '-',
                                         pic: r.pic || '-',
                                         batch: r.batch_number || '-',
-                                        lineStop: `ODT Exceed - ${odt.name}`,
-                                        action: 'Auto-generated from ODT exceed',
-                                        durasi: exceed.toFixed(1)
+                                        lineStop: ls.item || '-',
+                                        action: ls.action || '-',
+                                        durasi: parseFloat(ls.duration || 0).toFixed(1)
                                     });
                                 }
                             }
@@ -2778,6 +2754,7 @@
                 const lsStats = {};
                 records.forEach(r => {
                     try {
+                        // Hanya baca dari line_stop_non_mesin_data - tidak perlu baca dari ODT
                         if (r.line_stop_non_mesin_data) {
                             const lsData = typeof r.line_stop_non_mesin_data === 'string' ? JSON.parse(r.line_stop_non_mesin_data) : r.line_stop_non_mesin_data;
                             lsData.forEach(ls => {
@@ -2789,24 +2766,6 @@
                         }
                     } catch (e) {
                         console.error('Error parsing LSNM data for chart:', e);
-                    }
-                    
-                    try {
-                        if (r.odt_data) {
-                            const odtData = typeof r.odt_data === 'string' ? JSON.parse(r.odt_data) : r.odt_data;
-                            odtData.forEach(odt => {
-                                if (odt.checked) {
-                                    const actualTime = parseFloat(odt.actualTime || 0);
-                                    const standardTime = parseFloat(odt.standardTime || 0);
-                                    if (actualTime > standardTime) {
-                                        const exceedName = `ODT Exceed - ${odt.name}`;
-                                        lsStats[exceedName] = (lsStats[exceedName] || 0) + (actualTime - standardTime);
-                                    }
-                                }
-                            });
-                        }
-                    } catch (e) {
-                        console.error('Error parsing ODT exceed for chart:', e);
                     }
                 });
                 
@@ -4462,31 +4421,11 @@
                         } catch (e) {}
                     }
                     
-                    if (filters.detailLineStopType === 'non_mesin') {
-                        if (r.line_stop_non_mesin_data) {
-                            try {
-                                const lsData = typeof r.line_stop_non_mesin_data === 'string' ? JSON.parse(r.line_stop_non_mesin_data) : r.line_stop_non_mesin_data;
-                                match = lsData.some(ls => ls.item === filters.detailLineStopItem);
-                            } catch (e) {}
-                        }
-                        
-                        if (!match && r.odt_data) {
-                            try {
-                                const odtData = typeof r.odt_data === 'string' ? JSON.parse(r.odt_data) : r.odt_data;
-                                odtData.forEach(odt => {
-                                    if (odt.checked) {
-                                        const actualTime = parseFloat(odt.actualTime || 0);
-                                        const standardTime = parseFloat(odt.standardTime || 0);
-                                        if (actualTime > standardTime) {
-                                            const exceedName = `ODT Exceed - ${odt.name}`;
-                                            if (exceedName === filters.detailLineStopItem) {
-                                                match = true;
-                                            }
-                                        }
-                                    }
-                                });
-                            } catch (e) {}
-                        }
+                    if (filters.detailLineStopType === 'non_mesin' && r.line_stop_non_mesin_data) {
+                        try {
+                            const lsData = typeof r.line_stop_non_mesin_data === 'string' ? JSON.parse(r.line_stop_non_mesin_data) : r.line_stop_non_mesin_data;
+                            match = lsData.some(ls => ls.item === filters.detailLineStopItem);
+                        } catch (e) {}
                     }
                     
                     return match;
