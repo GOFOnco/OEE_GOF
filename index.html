@@ -190,11 +190,6 @@
             box-shadow: 0 0 0 3px rgba(102, 125, 234, 0.1);
         }
         
-        .input-field:read-only {
-            background: var(--bg-secondary);
-            cursor: not-allowed;
-        }
-        
         .label {
             display: block;
             margin-bottom: 6px;
@@ -326,7 +321,7 @@
             background: white;
             border-radius: 16px;
             padding: 32px;
-            max-width: 1000px;
+            max-width: 900px;
             width: 100%;
             max-height: 90vh;
             overflow-y: auto;
@@ -351,10 +346,6 @@
         
         .toast.error {
             background: var(--danger);
-        }
-        
-        .toast.info {
-            background: var(--accent-primary);
         }
         
         @keyframes slideIn {
@@ -616,16 +607,6 @@
             color: var(--success);
             margin-right: 4px;
         }
-        
-        .edit-highlight {
-            border: 2px solid var(--warning);
-            transition: all 0.2s ease;
-        }
-        
-        .edit-preview-card {
-            background: rgba(245, 158, 11, 0.05);
-            border-left: 4px solid var(--warning);
-        }
     </style>
 </head>
 <body class="h-full">
@@ -710,14 +691,6 @@
         // Variable untuk menyimpan filter dari OEE history yang diklik
         let clickedRecordFilter = null;
 
-        // Variable untuk Edit OEE Admin Mode
-        let editingRecordId = null;
-        let editingMachineDetails = null;
-        let editingRecordData = null;
-        let customLSMCounter = 0;
-        let customLSNMCounter = 0;
-        let customMSCounter = 0;
-
         function showToast(message, type = 'success') {
             const toast = document.createElement('div');
             toast.className = `toast ${type}`;
@@ -759,9 +732,6 @@
         function closeModal() {
             const modal = document.getElementById('modal');
             if (modal) modal.remove();
-            editingRecordId = null;
-            editingMachineDetails = null;
-            editingRecordData = null;
         }
 
         async function loadMachines() {
@@ -967,44 +937,6 @@
                 return data;
             } catch (error) {
                 console.error('Error saving OEE record:', error);
-                throw error;
-            }
-        }
-
-        async function updateOEERecord(recordId, recordData) {
-            try {
-                // Catat data lama untuk history
-                const oldRecord = allOEERecords.find(r => r.id === recordId);
-                
-                const cleanedData = {
-                    ...recordData,
-                    odt_data: JSON.stringify(recordData.odt_data || []),
-                    line_stop_mesin_data: JSON.stringify(recordData.line_stop_mesin_data || []),
-                    line_stop_non_mesin_data: JSON.stringify(recordData.line_stop_non_mesin_data || []),
-                    minor_stop_data: JSON.stringify(recordData.minor_stop_data || []),
-                    updated_at: new Date().toISOString(),
-                    updated_by: 'admin'
-                };
-                
-                const { error } = await db
-                    .from('oee_records')
-                    .update(cleanedData)
-                    .eq('id', recordId);
-                
-                if (error) throw error;
-                
-                // Log ke konsol untuk audit (bisa dikirim ke tabel terpisah)
-                console.log('Record updated:', {
-                    recordId,
-                    oldData: oldRecord,
-                    newData: recordData,
-                    updatedAt: new Date().toISOString(),
-                    updatedBy: 'admin'
-                });
-                
-                return true;
-            } catch (error) {
-                console.error('Error updating OEE record:', error);
                 throw error;
             }
         }
@@ -1707,7 +1639,7 @@
 
         function generateOEEHistoryRows(records) {
             if (records.length === 0) {
-                return '<tr><td colspan="13" style="text-align: center; color: var(--text-secondary); padding: 40px;">No records found for this period</td></tr>';
+                return '<tr><td colspan="12" style="text-align: center; color: var(--text-secondary); padding: 40px;">No records found for this period</td></tr>';
             }
             
             return records.map(r => {
@@ -2061,7 +1993,6 @@
         function renderManagementPage() {
             return `
                 <div class="container-main">
-                    <!-- Machine Management Card (Existing) -->
                     <div class="card">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
                             <div class="card-header" style="margin: 0;">⚙️ Machine Management</div>
@@ -2103,37 +2034,6 @@
                             </div>
                         `}
                     </div>
-
-                    <!-- NEW: Edit OEE Section (Admin Only) -->
-                    <div class="card" style="margin-top: 24px; border: 2px solid var(--accent-primary);">
-                        <div class="card-header">
-                            <div class="card-header-left">✏️ Edit OEE Data (Admin Only)</div>
-                            <span class="badge badge-warning">🔒 Restricted</span>
-                        </div>
-                        
-                        <div style="background: rgba(102, 125, 234, 0.1); padding: 24px; border-radius: 12px;">
-                            <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 16px; align-items: end; flex-wrap: wrap;">
-                                <div>
-                                    <label class="label">Tanggal *</label>
-                                    <input type="date" id="edit-search-date" class="input-field" value="${new Date().toISOString().split('T')[0]}">
-                                </div>
-                                <div>
-                                    <label class="label">Shift *</label>
-                                    <select id="edit-search-shift" class="input-field">
-                                        <option value="">Pilih Shift</option>
-                                        ${Object.keys(SHIFTS).map(s => `<option value="${s}">${s}</option>`).join('')}
-                                    </select>
-                                </div>
-                                <div>
-                                    <button class="btn btn-primary" onclick="searchOEERecordForEdit()" style="padding: 10px 24px;">
-                                        🔍 Cari Data
-                                    </button>
-                                </div>
-                            </div>
-                            
-                            <div id="edit-search-result" style="margin-top: 16px;"></div>
-                        </div>
-                    </div>
                 </div>
             `;
         }
@@ -2170,434 +2070,1146 @@
             `;
         }
 
-        // ==================== EDIT OEE FUNCTIONS ====================
+        function wrapText(ctx, text, maxWidth) {
+            const words = text.split(' ');
+            const lines = [];
+            let currentLine = words[0];
 
-        async function searchOEERecordForEdit() {
-            if (!isManagementUnlocked) {
-                showToast('Anda harus unlock management dulu', 'error');
-                return;
+            for (let i = 1; i < words.length; i++) {
+                const word = words[i];
+                const width = ctx.measureText(currentLine + ' ' + word).width;
+                if (width < maxWidth) {
+                    currentLine += ' ' + word;
+                } else {
+                    lines.push(currentLine);
+                    currentLine = word;
+                }
             }
-
-            const date = document.getElementById('edit-search-date').value;
-            const shift = document.getElementById('edit-search-shift').value;
-            
-            if (!date || !shift) {
-                showToast('Pilih tanggal dan shift dulu', 'error');
-                return;
-            }
-            
-            showLoading('Mencari data...');
-            
-            // Cari record dengan kombinasi tanggal + shift
-            const { data: records, error } = await db
-                .from('oee_records')
-                .select('*')
-                .eq('date', date)
-                .eq('shift', shift)
-                .order('machine_name');
-            
-            hideLoading();
-            
-            if (error) {
-                showToast('Error: ' + error.message, 'error');
-                return;
-            }
-            
-            const resultDiv = document.getElementById('edit-search-result');
-            
-            if (!records || records.length === 0) {
-                resultDiv.innerHTML = `
-                    <div style="background: rgba(239, 68, 68, 0.1); padding: 20px; border-radius: 8px; text-align: center; color: var(--danger);">
-                        <p style="font-weight: 600;">❌ Tidak ada data untuk tanggal ${new Date(date).toLocaleDateString('id-ID')} shift ${shift}</p>
-                        <p style="font-size: 13px; margin-top: 8px;">Mungkin data belum diinput atau sudah dihapus</p>
-                    </div>
-                `;
-                return;
-            }
-            
-            // Tampilkan daftar machine yang ada di shift tersebut
-            resultDiv.innerHTML = `
-                <div style="margin-top: 24px;">
-                    <h4 style="font-weight: 700; margin-bottom: 16px;">📋 Ditemukan ${records.length} data:</h4>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px;">
-                        ${records.map(record => `
-                            <div style="border: 2px solid var(--border); border-radius: 12px; padding: 16px; background: var(--bg-primary);">
-                                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
-                                    <div>
-                                        <strong style="font-size: 16px;">${record.machine_name}</strong>
-                                        <div style="font-size: 12px; color: var(--text-secondary);">PIC: ${record.pic}</div>
-                                    </div>
-                                    <span class="badge ${record.oee_actual >= 88 ? 'badge-success' : 'badge-danger'}">
-                                        OEE: ${record.oee_actual.toFixed(1)}%
-                                    </span>
-                                </div>
-                                <div style="font-size: 13px; margin-bottom: 12px;">
-                                    <div>Batch: ${record.batch_number} | Output: ${record.actual_output}</div>
-                                    <div style="color: var(--text-secondary);">${record.notes || '-'}</div>
-                                </div>
-                                <button class="btn btn-primary" style="width: 100%;" 
-                                        onclick="openEditOEEModal('${record.id}')">
-                                    ✏️ Edit Data Ini
-                                </button>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-            `;
+            lines.push(currentLine);
+            return lines;
         }
 
-        async function openEditOEEModal(recordId) {
-            if (!isManagementUnlocked) {
-                showToast('Anda harus unlock management dulu', 'error');
+        function renderCharts() {
+            const filtered = getFilteredRecords();
+            
+            Object.values(chartInstances).forEach(chart => {
+                try {
+                    if (chart && chart.destroy) chart.destroy();
+                } catch (e) {
+                    console.error('Error destroying chart:', e);
+                }
+            });
+            chartInstances = {};
+            
+            renderTrendChart(); // Tidak menggunakan filtered
+            renderPerMachineChart(filtered);
+            renderAPQChart(filtered);
+            renderODTChart(filtered);
+            renderLineStopMesinChart(filtered);
+            renderLineStopNonMesinChart(filtered);
+            renderMinorStopChart(filtered);
+        }
+
+        function renderTrendChart() {
+            const ctx = document.getElementById('chart-trend');
+            if (!ctx) return;
+            
+            try {
+                // Gunakan SEMUA data, tidak terpengaruh filter
+                const currentYear = new Date().getFullYear();
+                const recordsThisYear = allOEERecords.filter(r => {
+                    const recordYear = new Date(r.date).getFullYear();
+                    return recordYear === currentYear;
+                });
+
+                // Kelompokkan data per bulan
+                const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+                const monthlyData = {};
+                
+                // Inisialisasi semua bulan dengan array kosong
+                for (let i = 0; i < 12; i++) {
+                    monthlyData[i] = [];
+                }
+
+                // Kelompokkan OEE per bulan
+                recordsThisYear.forEach(r => {
+                    const month = new Date(r.date).getMonth(); // 0-11
+                    monthlyData[month].push(r.oee_actual || 0);
+                });
+
+                // Hitung rata-rata per bulan
+                const monthlyAvg = [];
+                const months = [];
+                
+                for (let i = 0; i < 12; i++) {
+                    const monthRecords = monthlyData[i];
+                    if (monthRecords.length > 0) {
+                        const avg = monthRecords.reduce((sum, val) => sum + val, 0) / monthRecords.length;
+                        monthlyAvg.push(avg);
+                    } else {
+                        monthlyAvg.push(null); // Tidak ada data
+                    }
+                    months.push(monthNames[i]);
+                }
+
+                // Filter bulan yang memiliki data
+                const hasDataIndices = monthlyAvg.map((val, idx) => val !== null);
+                
+                if (hasDataIndices.filter(v => v).length === 0) return;
+
+                // Buat dataset dengan warna berdasarkan target
+                const pointColors = monthlyAvg.map(value => 
+                    value !== null && value >= 88 ? '#10b981' : '#ef4444'
+                );
+
+                chartInstances.trend = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: months,
+                        datasets: [{
+                            label: 'Rata-rata OEE per Bulan',
+                            data: monthlyAvg,
+                            borderColor: '#667eea',
+                            backgroundColor: 'rgba(102, 125, 234, 0.1)',
+                            tension: 0.4,
+                            fill: true,
+                            pointBackgroundColor: pointColors,
+                            pointBorderColor: pointColors,
+                            pointRadius: 6,
+                            pointHoverRadius: 8,
+                            spanGaps: true // Lewati titik null
+                        }, {
+                            label: 'Target 88%',
+                            data: Array(12).fill(88),
+                            borderColor: '#10b981',
+                            borderDash: [5, 5],
+                            pointRadius: 0,
+                            fill: false
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: true },
+                            tooltip: {
+                                callbacks: {
+                                    title: function(context) {
+                                        const monthIndex = context[0].dataIndex;
+                                        return `${monthNames[monthIndex]} ${currentYear}`;
+                                    },
+                                    label: function(context) {
+                                        const value = context.raw;
+                                        if (value === null) return 'Tidak ada data';
+                                        return `Rata-rata OEE: ${value.toFixed(1)}%`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: { 
+                                beginAtZero: true, 
+                                max: 100,
+                                title: {
+                                    display: true,
+                                    text: 'OEE (%)'
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Bulan'
+                                }
+                            }
+                        }
+                    }
+                });
+            } catch (e) {
+                console.error('Error rendering trend chart:', e);
+            }
+        }
+
+        function renderPerMachineChart(records) {
+            const ctx = document.getElementById('chart-per-machine');
+            if (!ctx) return;
+            
+            try {
+                const machineStats = {};
+                records.forEach(r => {
+                    if (!r.machine_name) return;
+                    
+                    if (!machineStats[r.machine_name]) {
+                        machineStats[r.machine_name] = { total: 0, count: 0 };
+                    }
+                    machineStats[r.machine_name].total += r.oee_actual || 0;
+                    machineStats[r.machine_name].count += 1;
+                });
+                
+                const data = Object.entries(machineStats).map(([name, stats]) => ({
+                    name,
+                    avg: stats.total / stats.count
+                })).sort((a, b) => b.avg - a.avg);
+                
+                if (data.length === 0) return;
+                
+                const labels = data.map(d => d.name);
+                const values = data.map(d => d.avg);
+                const colors = values.map(v => v >= 88 ? '#10b981' : '#ef4444');
+                
+                chartInstances.perMachine = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels,
+                        datasets: [{
+                            label: 'Avg OEE Actual',
+                            data: values,
+                            backgroundColor: colors
+                        }, {
+                            label: 'Target 88%',
+                            data: Array(labels.length).fill(88),
+                            type: 'line',
+                            borderColor: '#10b981',
+                            borderDash: [5, 5],
+                            pointRadius: 0,
+                            fill: false
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { 
+                            legend: { display: true },
+                            tooltip: {
+                                callbacks: {
+                                    title: function(context) {
+                                        const index = context[0].dataIndex;
+                                        return data[index].name;
+                                    }
+                                }
+                            }
+                        },
+                        scales: { 
+                            y: { beginAtZero: true, max: 100 },
+                            x: {
+                                ticks: {
+                                    font: { size: 11 },
+                                    maxRotation: 45,
+                                    minRotation: 45,
+                                    callback: function(val, index) {
+                                        const label = this.getLabelForValue(val);
+                                        const maxCharsPerLine = 15;
+                                        if (label.length > maxCharsPerLine) {
+                                            const words = label.split(' ');
+                                            let lines = [];
+                                            let currentLine = '';
+                                            
+                                            for (let word of words) {
+                                                if ((currentLine + ' ' + word).length <= maxCharsPerLine) {
+                                                    currentLine = currentLine ? currentLine + ' ' + word : word;
+                                                } else {
+                                                    if (currentLine) lines.push(currentLine);
+                                                    currentLine = word;
+                                                }
+                                            }
+                                            if (currentLine) lines.push(currentLine);
+                                            return lines;
+                                        }
+                                        return label;
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    plugins: [{
+                        id: 'datalabels',
+                        afterDatasetsDraw: function(chart) {
+                            const { ctx, data, chartArea } = chart;
+                            ctx.save();
+                            
+                            data.datasets[0].data.forEach((value, index) => {
+                                const meta = chart.getDatasetMeta(0);
+                                const bar = meta.data[index];
+                                
+                                if (bar) {
+                                    const x = bar.x;
+                                    const y = bar.y;
+                                    const barHeight = bar.height;
+                                    
+                                    const centerX = x;
+                                    const centerY = y + (barHeight / 2);
+                                    
+                                    ctx.fillStyle = '#ffffff';
+                                    ctx.font = 'bold 11px Arial';
+                                    ctx.textAlign = 'center';
+                                    ctx.textBaseline = 'middle';
+                                    ctx.fillText(value.toFixed(1) + '%', centerX, centerY);
+                                }
+                            });
+                            
+                            ctx.restore();
+                        }
+                    }]
+                });
+            } catch (e) {
+                console.error('Error rendering per machine chart:', e);
+            }
+        }
+
+        function renderAPQChart(records) {
+            const ctx = document.getElementById('chart-apq');
+            if (!ctx) return;
+            
+            try {
+                const avgA = records.length > 0 ? records.reduce((sum, r) => sum + (r.availability_actual || 0), 0) / records.length : 0;
+                const avgP = records.length > 0 ? records.reduce((sum, r) => sum + (r.performance || 0), 0) / records.length : 0;
+                const avgQ = records.length > 0 ? records.reduce((sum, r) => sum + (r.quality || 0), 0) / records.length : 0;
+                const avgA365 = records.length > 0 ? records.reduce((sum, r) => sum + (r.availability_365 || 0), 0) / records.length : 0;
+                
+                chartInstances.apq = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Availability', 'Performance', 'Quality', 'Availability 365'],
+                        datasets: [{
+                            label: 'Average %',
+                            data: [avgA, avgP, avgQ, avgA365],
+                            backgroundColor: [
+                                avgA >= 95 ? '#10b981' : '#ef4444',
+                                avgP >= 95 ? '#10b981' : '#ef4444',
+                                avgQ >= 98 ? '#10b981' : '#ef4444',
+                                avgA365 >= 60 ? '#10b981' : '#ef4444'
+                            ]
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { 
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return `${context.dataset.label}: ${context.raw.toFixed(1)}%`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: { 
+                            y: { 
+                                beginAtZero: true, 
+                                max: 100,
+                                ticks: {
+                                    callback: function(value) {
+                                        return value + '%';
+                                    }
+                                }
+                            } 
+                        }
+                    },
+                    plugins: [{
+                        id: 'datalabels',
+                        afterDatasetsDraw: function(chart) {
+                            const { ctx, data } = chart;
+                            ctx.save();
+                            
+                            data.datasets[0].data.forEach((value, index) => {
+                                const meta = chart.getDatasetMeta(0);
+                                const bar = meta.data[index];
+                                
+                                if (bar) {
+                                    const x = bar.x;
+                                    const y = bar.y;
+                                    const barHeight = bar.height;
+                                    
+                                    const centerX = x;
+                                    const centerY = y + (barHeight / 2);
+                                    
+                                    ctx.fillStyle = '#ffffff';
+                                    ctx.font = 'bold 12px Arial';
+                                    ctx.textAlign = 'center';
+                                    ctx.textBaseline = 'middle';
+                                    ctx.fillText(value.toFixed(1) + '%', centerX, centerY);
+                                }
+                            });
+                            
+                            ctx.restore();
+                        }
+                    }]
+                });
+            } catch (e) {
+                console.error('Error rendering APQ chart:', e);
+            }
+        }
+
+        function renderODTChart(records) {
+            const ctx = document.getElementById('chart-odt');
+            if (!ctx) return;
+            
+            try {
+                const odtStats = {};
+                records.forEach(r => {
+                    try {
+                        if (r.odt_data) {
+                            const odtData = typeof r.odt_data === 'string' ? JSON.parse(r.odt_data) : r.odt_data;
+                            odtData.forEach(odt => {
+                                if (odt.checked) {
+                                    const actualTime = parseFloat(odt.actualTime || 0);
+                                    const standardTime = parseFloat(odt.standardTime || 0);
+                                    const time = Math.min(actualTime, standardTime);
+                                    if (odt.name) {
+                                        odtStats[odt.name] = (odtStats[odt.name] || 0) + time;
+                                    }
+                                }
+                            });
+                        }
+                    } catch (e) {
+                        console.error('Error parsing ODT data for chart:', e);
+                    }
+                });
+                
+                const sorted = Object.entries(odtStats)
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 10);
+                
+                if (sorted.length === 0) return;
+                
+                const maxCharsPerLine = 20;
+                const labels = sorted.map(s => {
+                    const name = s[0];
+                    const words = name.split(' ');
+                    let lines = [];
+                    let currentLine = '';
+                    
+                    for (let word of words) {
+                        if ((currentLine + ' ' + word).length <= maxCharsPerLine) {
+                            currentLine = currentLine ? currentLine + ' ' + word : word;
+                        } else {
+                            if (currentLine) lines.push(currentLine);
+                            currentLine = word;
+                        }
+                    }
+                    if (currentLine) lines.push(currentLine);
+                    
+                    if (lines.length > 2) {
+                        return lines.slice(0, 2).map(l => l.length > maxCharsPerLine ? l.substring(0, maxCharsPerLine-3) + '...' : l);
+                    }
+                    return lines;
+                });
+                
+                const values = sorted.map(s => s[1]);
+                
+                chartInstances.odt = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels,
+                        datasets: [{
+                            label: 'Total Minutes',
+                            data: values,
+                            backgroundColor: '#f59e0b'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        indexAxis: 'y',
+                        plugins: { 
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    title: function(tooltipItems) {
+                                        const index = tooltipItems[0].dataIndex;
+                                        return sorted[index][0];
+                                    },
+                                    label: function(context) {
+                                        return `Duration: ${context.raw.toFixed(1)} minutes`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(value) {
+                                        return value;
+                                    }
+                                }
+                            },
+                            y: {
+                                ticks: {
+                                    font: {
+                                        size: 11
+                                    },
+                                    autoSkip: false,
+                                    maxRotation: 0,
+                                    minRotation: 0,
+                                    callback: function(val, index) {
+                                        const label = this.getLabelForValue(val);
+                                        if (Array.isArray(label)) {
+                                            return label;
+                                        }
+                                        return label;
+                                    }
+                                }
+                            }
+                        },
+                        layout: {
+                            padding: {
+                                left: 20,
+                                right: 60,
+                                top: 20,
+                                bottom: 20
+                            }
+                        }
+                    },
+                    plugins: [{
+                        id: 'datalabels',
+                        afterDatasetsDraw: function(chart) {
+                            const { ctx, data } = chart;
+                            ctx.save();
+                            
+                            data.datasets[0].data.forEach((value, index) => {
+                                const meta = chart.getDatasetMeta(0);
+                                const bar = meta.data[index];
+                                
+                                if (bar) {
+                                    const x = bar.x;
+                                    const y = bar.y;
+                                    
+                                    const labelX = x + 5;
+                                    const labelY = y;
+                                    
+                                    ctx.fillStyle = '#333333';
+                                    ctx.font = 'bold 11px Arial';
+                                    ctx.textAlign = 'left';
+                                    ctx.textBaseline = 'middle';
+                                    ctx.fillText(value.toFixed(0), labelX, labelY);
+                                }
+                            });
+                            
+                            ctx.restore();
+                        }
+                    }]
+                });
+            } catch (e) {
+                console.error('Error rendering ODT chart:', e);
+            }
+        }
+
+        function renderLineStopMesinChart(records) {
+            const ctx = document.getElementById('chart-ls-mesin');
+            if (!ctx) return;
+            
+            try {
+                const lsStats = {};
+                records.forEach(r => {
+                    try {
+                        if (r.line_stop_mesin_data) {
+                            const lsData = typeof r.line_stop_mesin_data === 'string' ? JSON.parse(r.line_stop_mesin_data) : r.line_stop_mesin_data;
+                            lsData.forEach(ls => {
+                                const duration = parseFloat(ls.duration || 0);
+                                if (ls.item) {
+                                    lsStats[ls.item] = (lsStats[ls.item] || 0) + duration;
+                                }
+                            });
+                        }
+                    } catch (e) {
+                        console.error('Error parsing LSM data for chart:', e);
+                    }
+                });
+                
+                const sorted = Object.entries(lsStats)
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 10);
+                
+                if (sorted.length === 0) return;
+                
+                const maxCharsPerLine = 20;
+                const labels = sorted.map(s => {
+                    const name = s[0];
+                    const words = name.split(' ');
+                    let lines = [];
+                    let currentLine = '';
+                    
+                    for (let word of words) {
+                        if ((currentLine + ' ' + word).length <= maxCharsPerLine) {
+                            currentLine = currentLine ? currentLine + ' ' + word : word;
+                        } else {
+                            if (currentLine) lines.push(currentLine);
+                            currentLine = word;
+                        }
+                    }
+                    if (currentLine) lines.push(currentLine);
+                    
+                    if (lines.length > 2) {
+                        return lines.slice(0, 2).map(l => l.length > maxCharsPerLine ? l.substring(0, maxCharsPerLine-3) + '...' : l);
+                    }
+                    return lines;
+                });
+                
+                const values = sorted.map(s => s[1]);
+                
+                chartInstances.lsMesin = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels,
+                        datasets: [{
+                            label: 'Total Minutes',
+                            data: values,
+                            backgroundColor: '#ef4444'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        indexAxis: 'y',
+                        plugins: { 
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    title: function(tooltipItems) {
+                                        const index = tooltipItems[0].dataIndex;
+                                        return sorted[index][0];
+                                    },
+                                    label: function(context) {
+                                        return `Duration: ${context.raw.toFixed(1)} minutes`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(value) {
+                                        return value;
+                                    }
+                                }
+                            },
+                            y: {
+                                ticks: {
+                                    font: {
+                                        size: 11
+                                    },
+                                    autoSkip: false,
+                                    maxRotation: 0,
+                                    minRotation: 0,
+                                    callback: function(val, index) {
+                                        const label = this.getLabelForValue(val);
+                                        if (Array.isArray(label)) {
+                                            return label;
+                                        }
+                                        return label;
+                                    }
+                                }
+                            }
+                        },
+                        layout: {
+                            padding: {
+                                left: 20,
+                                right: 60,
+                                top: 20,
+                                bottom: 20
+                            }
+                        }
+                    },
+                    plugins: [{
+                        id: 'datalabels',
+                        afterDatasetsDraw: function(chart) {
+                            const { ctx, data } = chart;
+                            ctx.save();
+                            
+                            data.datasets[0].data.forEach((value, index) => {
+                                const meta = chart.getDatasetMeta(0);
+                                const bar = meta.data[index];
+                                
+                                if (bar) {
+                                    const x = bar.x;
+                                    const y = bar.y;
+                                    
+                                    const labelX = x + 5;
+                                    const labelY = y;
+                                    
+                                    ctx.fillStyle = '#333333';
+                                    ctx.font = 'bold 11px Arial';
+                                    ctx.textAlign = 'left';
+                                    ctx.textBaseline = 'middle';
+                                    ctx.fillText(value.toFixed(0), labelX, labelY);
+                                }
+                            });
+                            
+                            ctx.restore();
+                        }
+                    }]
+                });
+            } catch (e) {
+                console.error('Error rendering LSM chart:', e);
+            }
+        }
+
+        function renderLineStopNonMesinChart(records) {
+            const ctx = document.getElementById('chart-ls-non-mesin');
+            if (!ctx) return;
+            
+            try {
+                const lsStats = {};
+                records.forEach(r => {
+                    try {
+                        // Hanya baca dari line_stop_non_mesin_data - tidak perlu baca dari ODT
+                        if (r.line_stop_non_mesin_data) {
+                            const lsData = typeof r.line_stop_non_mesin_data === 'string' ? JSON.parse(r.line_stop_non_mesin_data) : r.line_stop_non_mesin_data;
+                            lsData.forEach(ls => {
+                                const duration = parseFloat(ls.duration || 0);
+                                if (ls.item) {
+                                    lsStats[ls.item] = (lsStats[ls.item] || 0) + duration;
+                                }
+                            });
+                        }
+                    } catch (e) {
+                        console.error('Error parsing LSNM data for chart:', e);
+                    }
+                });
+                
+                const sorted = Object.entries(lsStats)
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 10);
+                
+                if (sorted.length === 0) return;
+                
+                const maxCharsPerLine = 20;
+                const labels = sorted.map(s => {
+                    const name = s[0];
+                    const words = name.split(' ');
+                    let lines = [];
+                    let currentLine = '';
+                    
+                    for (let word of words) {
+                        if ((currentLine + ' ' + word).length <= maxCharsPerLine) {
+                            currentLine = currentLine ? currentLine + ' ' + word : word;
+                        } else {
+                            if (currentLine) lines.push(currentLine);
+                            currentLine = word;
+                        }
+                    }
+                    if (currentLine) lines.push(currentLine);
+                    
+                    if (lines.length > 2) {
+                        return lines.slice(0, 2).map(l => l.length > maxCharsPerLine ? l.substring(0, maxCharsPerLine-3) + '...' : l);
+                    }
+                    return lines;
+                });
+                
+                const values = sorted.map(s => s[1]);
+                
+                chartInstances.lsNonMesin = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels,
+                        datasets: [{
+                            label: 'Total Minutes',
+                            data: values,
+                            backgroundColor: '#f59e0b'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        indexAxis: 'y',
+                        plugins: { 
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    title: function(tooltipItems) {
+                                        const index = tooltipItems[0].dataIndex;
+                                        return sorted[index][0];
+                                    },
+                                    label: function(context) {
+                                        return `Duration: ${context.raw.toFixed(1)} minutes`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(value) {
+                                        return value;
+                                    }
+                                }
+                            },
+                            y: {
+                                ticks: {
+                                    font: {
+                                        size: 11
+                                    },
+                                    autoSkip: false,
+                                    maxRotation: 0,
+                                    minRotation: 0,
+                                    callback: function(val, index) {
+                                        const label = this.getLabelForValue(val);
+                                        if (Array.isArray(label)) {
+                                            return label;
+                                        }
+                                        return label;
+                                    }
+                                }
+                            }
+                        },
+                        layout: {
+                            padding: {
+                                left: 20,
+                                right: 60,
+                                top: 20,
+                                bottom: 20
+                            }
+                        }
+                    },
+                    plugins: [{
+                        id: 'datalabels',
+                        afterDatasetsDraw: function(chart) {
+                            const { ctx, data } = chart;
+                            ctx.save();
+                            
+                            data.datasets[0].data.forEach((value, index) => {
+                                const meta = chart.getDatasetMeta(0);
+                                const bar = meta.data[index];
+                                
+                                if (bar) {
+                                    const x = bar.x;
+                                    const y = bar.y;
+                                    
+                                    const labelX = x + 5;
+                                    const labelY = y;
+                                    
+                                    ctx.fillStyle = '#333333';
+                                    ctx.font = 'bold 11px Arial';
+                                    ctx.textAlign = 'left';
+                                    ctx.textBaseline = 'middle';
+                                    ctx.fillText(value.toFixed(0), labelX, labelY);
+                                }
+                            });
+                            
+                            ctx.restore();
+                        }
+                    }]
+                });
+            } catch (e) {
+                console.error('Error rendering LSNM chart:', e);
+            }
+        }
+
+        function renderMinorStopChart(records) {
+            const ctx = document.getElementById('chart-minor-stop');
+            if (!ctx) return;
+            
+            try {
+                const msStats = {};
+                records.forEach(r => {
+                    try {
+                        if (r.minor_stop_data) {
+                            const msData = typeof r.minor_stop_data === 'string' ? JSON.parse(r.minor_stop_data) : r.minor_stop_data;
+                            msData.forEach(ms => {
+                                const frequency = parseFloat(ms.frequency || 0);
+                                if (ms.item) {
+                                    msStats[ms.item] = (msStats[ms.item] || 0) + frequency;
+                                }
+                            });
+                        }
+                    } catch (e) {
+                        console.error('Error parsing minor stop data for chart:', e);
+                    }
+                });
+                
+                const sorted = Object.entries(msStats)
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 10);
+                
+                if (sorted.length === 0) return;
+                
+                const maxCharsPerLine = 20;
+                const labels = sorted.map(s => {
+                    const name = s[0];
+                    const words = name.split(' ');
+                    let lines = [];
+                    let currentLine = '';
+                    
+                    for (let word of words) {
+                        if ((currentLine + ' ' + word).length <= maxCharsPerLine) {
+                            currentLine = currentLine ? currentLine + ' ' + word : word;
+                        } else {
+                            if (currentLine) lines.push(currentLine);
+                            currentLine = word;
+                        }
+                    }
+                    if (currentLine) lines.push(currentLine);
+                    
+                    if (lines.length > 2) {
+                        return lines.slice(0, 2).map(l => l.length > maxCharsPerLine ? l.substring(0, maxCharsPerLine-3) + '...' : l);
+                    }
+                    return lines;
+                });
+                
+                const values = sorted.map(s => s[1]);
+                
+                chartInstances.minorStop = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels,
+                        datasets: [{
+                            label: 'Total Frequency',
+                            data: values,
+                            backgroundColor: '#764ba2'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        indexAxis: 'y',
+                        plugins: { 
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    title: function(tooltipItems) {
+                                        const index = tooltipItems[0].dataIndex;
+                                        return sorted[index][0];
+                                    },
+                                    label: function(context) {
+                                        return `Frequency: ${context.raw} times`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(value) {
+                                        return value;
+                                    }
+                                }
+                            },
+                            y: {
+                                ticks: {
+                                    font: {
+                                        size: 11
+                                    },
+                                    autoSkip: false,
+                                    maxRotation: 0,
+                                    minRotation: 0,
+                                    callback: function(val, index) {
+                                        const label = this.getLabelForValue(val);
+                                        if (Array.isArray(label)) {
+                                            return label;
+                                        }
+                                        return label;
+                                    }
+                                }
+                            }
+                        },
+                        layout: {
+                            padding: {
+                                left: 20,
+                                right: 60,
+                                top: 20,
+                                bottom: 20
+                            }
+                        }
+                    },
+                    plugins: [{
+                        id: 'datalabels',
+                        afterDatasetsDraw: function(chart) {
+                            const { ctx, data } = chart;
+                            ctx.save();
+                            
+                            data.datasets[0].data.forEach((value, index) => {
+                                const meta = chart.getDatasetMeta(0);
+                                const bar = meta.data[index];
+                                
+                                if (bar) {
+                                    const x = bar.x;
+                                    const y = bar.y;
+                                    
+                                    const labelX = x + 5;
+                                    const labelY = y;
+                                    
+                                    ctx.fillStyle = '#333333';
+                                    ctx.font = 'bold 11px Arial';
+                                    ctx.textAlign = 'left';
+                                    ctx.textBaseline = 'middle';
+                                    ctx.fillText(value.toFixed(0), labelX, labelY);
+                                }
+                            });
+                            
+                            ctx.restore();
+                        }
+                    }]
+                });
+            } catch (e) {
+                console.error('Error rendering minor stop chart:', e);
+            }
+        }
+
+        let currentMachineData = null;
+        let currentMachineDetails = null;
+        let customLSMCounter = 0;
+        let customLSNMCounter = 0;
+        let customMSCounter = 0;
+
+        async function loadMachineData() {
+            const machineId = document.getElementById('input-machine').value;
+            if (!machineId) {
+                document.getElementById('odt-section').style.display = 'none';
+                document.getElementById('line-stop-mesin-section').style.display = 'none';
+                document.getElementById('line-stop-non-mesin-section').style.display = 'none';
+                document.getElementById('minor-stop-section').style.display = 'none';
+                document.getElementById('zero-target-info').style.display = 'none';
                 return;
             }
-
-            editingRecordId = recordId;
             
-            showLoading('Loading data for edit...');
-            
-            // 1. Ambil record yang mau diedit
-            const { data: record, error } = await db
-                .from('oee_records')
-                .select('*')
-                .eq('id', recordId)
-                .single();
-            
-            if (error || !record) {
-                hideLoading();
-                showToast('Gagal mengambil data', 'error');
-                return;
-            }
-
-            editingRecordData = record;
-            
-            // 2. Ambil machine details (ODT items, dll)
-            editingMachineDetails = await loadMachineDetails(record.machine_id);
-            
+            currentMachineData = allMachines.find(m => m.id === machineId);
+            showLoading('Loading machine configuration...');
+            currentMachineDetails = await loadMachineDetails(machineId);
             hideLoading();
             
-            // 3. Parse JSON data
-            const odtData = typeof record.odt_data === 'string' 
-                ? JSON.parse(record.odt_data) 
-                : (record.odt_data || []);
-            
-            const lsmData = typeof record.line_stop_mesin_data === 'string'
-                ? JSON.parse(record.line_stop_mesin_data)
-                : (record.line_stop_mesin_data || []);
-            
-            const lsnmData = typeof record.line_stop_non_mesin_data === 'string'
-                ? JSON.parse(record.line_stop_non_mesin_data)
-                : (record.line_stop_non_mesin_data || []);
-            
-            const msData = typeof record.minor_stop_data === 'string'
-                ? JSON.parse(record.minor_stop_data)
-                : (record.minor_stop_data || []);
-            
-            // 4. Tampilkan modal dengan form yang sudah terisi
-            showModal(`
-                <div style="max-width: 1000px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
-                        <h3 style="font-size: 24px; font-weight: 700;">✏️ Edit OEE Data</h3>
-                        <span class="badge badge-warning">Admin Mode</span>
-                    </div>
-                    
-                    <div style="background: rgba(245, 158, 11, 0.1); padding: 16px; border-radius: 8px; margin-bottom: 24px; border-left: 4px solid var(--warning);">
-                        <p style="margin: 0; font-size: 14px;">
-                            <strong>⚠️ Mengedit data:</strong> ${record.machine_name} - Shift ${record.shift} - ${new Date(record.date).toLocaleDateString('id-ID')}
-                        </p>
-                    </div>
-                    
-                    <!-- FORM INPUT (COPY dari renderInputPage, tapi di-prepopulate) -->
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
-                        <div>
-                            <label class="label">Tanggal *</label>
-                            <input type="date" id="edit-date" value="${record.date}" class="input-field" readonly style="background: var(--bg-secondary);">
-                        </div>
-                        <div>
-                            <label class="label">Shift *</label>
-                            <input type="text" id="edit-shift" value="${record.shift}" class="input-field" readonly style="background: var(--bg-secondary);">
-                        </div>
-                        <div>
-                            <label class="label">Machine *</label>
-                            <input type="text" id="edit-machine" value="${record.machine_name}" class="input-field" readonly style="background: var(--bg-secondary);">
-                        </div>
-                        <div>
-                            <label class="label">PIC *</label>
-                            <input type="text" id="edit-pic" value="${record.pic}" class="input-field" style="text-transform: uppercase;">
-                        </div>
-                        <div>
-                            <label class="label">Kode Produk *</label>
-                            <input type="text" id="edit-product" value="${record.product_code || ''}" class="input-field" style="text-transform: uppercase;">
-                        </div>
-                        <div>
-                            <label class="label">Nomor Batch *</label>
-                            <input type="text" id="edit-batch" value="${record.batch_number || ''}" class="input-field" style="text-transform: uppercase;">
-                        </div>
-                    </div>
-                    
-                    <!-- ODT Section -->
-                    <div style="margin-bottom: 24px;">
-                        <h4 style="font-weight: 700; margin-bottom: 12px;">⏱️ ODT</h4>
-                        <div id="edit-odt-list">
-                            ${renderEditableODTItems(editingMachineDetails.odt, odtData)}
-                        </div>
-                    </div>
-                    
-                    <!-- Line Stop Mesin Section -->
-                    <div style="margin-bottom: 24px;">
-                        <h4 style="font-weight: 700; margin-bottom: 12px;">🔧 Line Stop Mesin</h4>
-                        <div id="edit-lsm-list">
-                            ${renderEditableLSMItems(editingMachineDetails.lineStopMesin, lsmData)}
-                        </div>
-                        <button type="button" class="btn btn-secondary" style="margin-top: 12px;" onclick="addCustomLSMToEdit()">➕ Add Custom Line Stop Mesin</button>
-                        <div id="edit-custom-lsm-container"></div>
-                    </div>
-                    
-                    <!-- Line Stop Non Mesin Section -->
-                    <div style="margin-bottom: 24px;">
-                        <h4 style="font-weight: 700; margin-bottom: 12px;">⚠️ Line Stop Non Mesin</h4>
-                        <div id="edit-lsnm-list">
-                            ${renderEditableLSNMItems(editingMachineDetails.lineStopNonMesin, lsnmData)}
-                        </div>
-                        <button type="button" class="btn btn-secondary" style="margin-top: 12px;" onclick="addCustomLSNMToEdit()">➕ Add Custom Line Stop Non Mesin</button>
-                        <div id="edit-custom-lsnm-container"></div>
-                    </div>
-                    
-                    <!-- Minor Stop Section -->
-                    <div style="margin-bottom: 24px;">
-                        <h4 style="font-weight: 700; margin-bottom: 12px;">⏸️ Minor Stop</h4>
-                        <div id="edit-ms-list">
-                            ${renderEditableMSItems(editingMachineDetails.minorStop, msData)}
-                        </div>
-                        <button type="button" class="btn btn-secondary" style="margin-top: 12px;" onclick="addCustomMSToEdit()">➕ Add Custom Minor Stop</button>
-                        <div id="edit-custom-ms-container"></div>
-                    </div>
-                    
-                    <!-- Output & Reject -->
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
-                        <div>
-                            <label class="label">Actual Output</label>
-                            <input type="number" id="edit-output" value="${record.actual_output || 0}" min="0" class="input-field" oninput="updateEditCalculations()">
-                        </div>
-                        <div>
-                            <label class="label">Reject</label>
-                            <input type="number" id="edit-reject" value="${record.reject || 0}" min="0" class="input-field" oninput="updateEditCalculations()">
-                        </div>
-                    </div>
-                    
-                    <!-- Preview Hasil Perhitungan -->
-                    <div id="edit-calculated-results" style="background: var(--bg-secondary); padding: 20px; border-radius: 12px; margin-bottom: 24px;">
-                        <h4 style="font-weight: 700; margin-bottom: 16px;">🧮 Preview Hasil Edit</h4>
-                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
-                            <div>
-                                <div style="font-size: 12px;">Availability</div>
-                                <div id="edit-calc-a" style="font-size: 24px; font-weight: 700;">${record.availability_actual.toFixed(1)}%</div>
-                            </div>
-                            <div>
-                                <div style="font-size: 12px;">Performance</div>
-                                <div id="edit-calc-p" style="font-size: 24px; font-weight: 700;">${record.performance.toFixed(1)}%</div>
-                            </div>
-                            <div>
-                                <div style="font-size: 12px;">Quality</div>
-                                <div id="edit-calc-q" style="font-size: 24px; font-weight: 700;">${record.quality.toFixed(1)}%</div>
-                            </div>
-                            <div>
-                                <div style="font-size: 12px;">OEE Actual</div>
-                                <div id="edit-calc-oee" style="font-size: 24px; font-weight: 700;">${record.oee_actual.toFixed(1)}%</div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Notes -->
-                    <div style="margin-bottom: 24px;">
-                        <label class="label">Catatan</label>
-                        <textarea id="edit-notes" rows="3" class="input-field">${record.notes || ''}</textarea>
-                    </div>
-                    
-                    <!-- Action Buttons -->
-                    <div style="display: flex; gap: 16px; flex-wrap: wrap;">
-                        <button class="btn btn-primary" style="flex: 2;" onclick="updateOEERecordFromEdit()">💾 Update Data</button>
-                        <button class="btn btn-danger" style="flex: 1;" onclick="closeModal()">Batal</button>
-                    </div>
-                </div>
-            `);
-            
-            // Init custom counters
             customLSMCounter = 0;
             customLSNMCounter = 0;
             customMSCounter = 0;
-
-            // Trigger initial calculation
-            setTimeout(updateEditCalculations, 100);
-        }
-
-        function renderEditableODTItems(masterODT, existingODT) {
-            if (!masterODT || masterODT.length === 0) return '<p class="text-secondary">Tidak ada ODT items</p>';
             
-            return masterODT.map(odt => {
-                const existing = existingODT.find(e => e.name === odt.odt_name) || {};
-                return `
-                    <div class="checkbox-item" id="edit-odt-${odt.id}">
-                        <input type="checkbox" id="edit-odt-check-${odt.id}" 
-                               ${existing.checked ? 'checked' : ''} 
-                               onchange="toggleEditODT('${odt.id}')">
-                        <label style="flex: 1; cursor: pointer;" for="edit-odt-check-${odt.id}">
-                            <strong>${odt.odt_name}</strong> 
-                            <span style="color: var(--text-secondary);">(Standard: ${odt.standard_time} min)</span>
+            const zeroTargetInfo = document.getElementById('zero-target-info');
+            const outputField = document.getElementById('input-output');
+            const rejectField = document.getElementById('input-reject');
+            
+            if (currentMachineData && currentMachineData.target_per_minute === 0) {
+                zeroTargetInfo.style.display = 'block';
+                if (outputField) {
+                    outputField.classList.add('disabled-for-zero-target');
+                    outputField.placeholder = 'Not required (target per minute = 0)';
+                    outputField.disabled = true;
+                }
+                if (rejectField) {
+                    rejectField.classList.add('disabled-for-zero-target');
+                    rejectField.placeholder = 'Not required (target per minute = 0)';
+                    rejectField.disabled = true;
+                }
+            } else {
+                zeroTargetInfo.style.display = 'none';
+                if (outputField) {
+                    outputField.classList.remove('disabled-for-zero-target');
+                    outputField.placeholder = 'Required if target per minute > 0';
+                    outputField.disabled = false;
+                }
+                if (rejectField) {
+                    rejectField.classList.remove('disabled-for-zero-target');
+                    rejectField.placeholder = 'Required if target per minute > 0';
+                    rejectField.disabled = false;
+                }
+            }
+            
+            if (currentMachineDetails.odt.length > 0) {
+                document.getElementById('odt-section').style.display = 'block';
+                const odtHTML = currentMachineDetails.odt.map(odt => `
+                    <div class="checkbox-item" id="odt-${odt.id}">
+                        <input type="checkbox" id="odt-check-${odt.id}" onchange="toggleODT('${odt.id}')">
+                        <label style="flex: 1; cursor: pointer; word-break: break-word;" for="odt-check-${odt.id}">
+                            <strong>${odt.odt_name}</strong> <span style="color: var(--text-secondary); font-size: 12px;">(Standard: ${odt.standard_time} min)</span>
                         </label>
-                        <input type="number" id="edit-odt-time-${odt.id}" 
-                               value="${existing.actualTime || ''}" 
-                               min="0" step="0.1" 
-                               placeholder="Actual time" 
-                               class="odt-actual-time input-field"
-                               ${existing.checked ? '' : 'disabled'}
-                               oninput="checkEditODTExceed('${odt.id}', ${odt.standard_time})">
+                        <input type="number" id="odt-time-${odt.id}" min="0" step="0.1" placeholder="Actual time" class="odt-actual-time input-field" disabled oninput="checkODTExceed('${odt.id}', ${odt.standard_time})">
                     </div>
-                    <div id="edit-odt-exceed-warning-${odt.id}" class="odt-exceed-warning" style="display: none;"></div>
-                `;
-            }).join('');
-        }
-
-        function renderEditableLSMItems(masterLSM, existingLSM) {
-            if (!masterLSM || masterLSM.length === 0) return '<p class="text-secondary">Tidak ada Line Stop Mesin items</p>';
+                    <div id="odt-exceed-warning-${odt.id}" class="odt-exceed-warning" style="display: none; margin-top: -4px; margin-bottom: 8px;"></div>
+                `).join('');
+                document.getElementById('odt-list').innerHTML = odtHTML;
+            }
             
-            return masterLSM.map(ls => {
-                const existing = existingLSM.find(e => e.item === ls.item_name) || {};
-                return `
+            if (currentMachineDetails.lineStopMesin.length > 0) {
+                document.getElementById('line-stop-mesin-section').style.display = 'block';
+                const lsmHTML = currentMachineDetails.lineStopMesin.map(ls => `
                     <div style="background: var(--bg-secondary); padding: 12px; border-radius: 8px; margin-bottom: 8px; border: 1px solid var(--border);">
                         <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
-                            <input type="checkbox" id="edit-lsm-check-${ls.id}" 
-                                   ${existing.duration ? 'checked' : ''}
-                                   onchange="toggleEditLSM('${ls.id}')">
-                            <label style="flex: 1; font-weight: 600; cursor: pointer;" for="edit-lsm-check-${ls.id}">${ls.item_name}</label>
+                            <input type="checkbox" id="lsm-check-${ls.id}" onchange="toggleLineStopMesin('${ls.id}')">
+                            <label style="flex: 1; font-weight: 600; word-break: break-word;" for="lsm-check-${ls.id}">${ls.item_name}</label>
                         </div>
-                        <div id="edit-lsm-details-${ls.id}" style="display: ${existing.duration ? 'block' : 'none'}; padding-left: 32px;">
+                        <div id="lsm-details-${ls.id}" style="display: none; padding-left: 32px;">
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                                <input type="number" id="edit-lsm-duration-${ls.id}" 
-                                       value="${existing.duration || ''}" 
-                                       min="0" step="0.1" placeholder="Duration (min)" class="input-field" 
-                                       style="padding: 6px 10px;" oninput="checkEditLSMDuration('${ls.id}')">
-                                <input type="text" id="edit-lsm-action-${ls.id}" 
-                                       value="${existing.action || ''}" 
-                                       placeholder="Action" class="input-field" style="padding: 6px 10px;">
+                                <input type="number" id="lsm-duration-${ls.id}" min="0" step="0.1" placeholder="Duration (min)" class="input-field" style="padding: 6px 10px;" oninput="checkLSMDuration('${ls.id}')">
+                                <input type="text" id="lsm-action-${ls.id}" placeholder="Action" class="input-field" style="padding: 6px 10px;">
                             </div>
-                            <input type="text" id="edit-lsm-wr-${ls.id}" 
-                                   value="${existing.wr || ''}" 
-                                   placeholder="No WR" class="input-field" style="margin-top: 8px; padding: 6px 10px;">
-                            <div id="edit-lsm-warning-${ls.id}" style="display: none; margin-top: 8px; padding: 8px; background: rgba(239, 68, 68, 0.1); border: 1px solid var(--danger); border-radius: 6px; font-size: 12px; color: var(--danger);"></div>
+                            <input type="text" id="lsm-wr-${ls.id}" placeholder="No WR" class="input-field" style="margin-top: 8px; padding: 6px 10px;">
+                            <div id="lsm-warning-${ls.id}" style="display: none; margin-top: 8px; padding: 8px; background: rgba(239, 68, 68, 0.1); border: 1px solid var(--danger); border-radius: 6px; font-size: 12px; color: var(--danger);"></div>
                         </div>
                     </div>
-                `;
-            }).join('');
-        }
-
-        function renderEditableLSNMItems(masterLSNM, existingLSNM) {
-            if (!masterLSNM || masterLSNM.length === 0) return '<p class="text-secondary">Tidak ada Line Stop Non Mesin items</p>';
+                `).join('');
+                document.getElementById('line-stop-mesin-list').innerHTML = lsmHTML;
+            }
             
-            return masterLSNM.map(ls => {
-                const existing = existingLSNM.find(e => e.item === ls.item_name) || {};
-                return `
+            if (currentMachineDetails.lineStopNonMesin.length > 0) {
+                document.getElementById('line-stop-non-mesin-section').style.display = 'block';
+                const lsnmHTML = currentMachineDetails.lineStopNonMesin.map(ls => `
                     <div style="background: var(--bg-secondary); padding: 12px; border-radius: 8px; margin-bottom: 8px; border: 1px solid var(--border);">
                         <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
-                            <input type="checkbox" id="edit-lsnm-check-${ls.id}" 
-                                   ${existing.duration ? 'checked' : ''}
-                                   onchange="toggleEditLSNM('${ls.id}')">
-                            <label style="flex: 1; font-weight: 600; cursor: pointer;" for="edit-lsnm-check-${ls.id}">${ls.item_name}</label>
+                            <input type="checkbox" id="lsnm-check-${ls.id}" onchange="toggleLineStopNonMesin('${ls.id}')">
+                            <label style="flex: 1; font-weight: 600; word-break: break-word;" for="lsnm-check-${ls.id}">${ls.item_name}</label>
                         </div>
-                        <div id="edit-lsnm-details-${ls.id}" style="display: ${existing.duration ? 'block' : 'none'}; padding-left: 32px;">
+                        <div id="lsnm-details-${ls.id}" style="display: none; padding-left: 32px;">
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                                <input type="number" id="edit-lsnm-duration-${ls.id}" 
-                                       value="${existing.duration || ''}" 
-                                       min="0" step="0.1" placeholder="Duration (min) *" class="input-field" 
-                                       style="padding: 6px 10px;" oninput="updateEditCalculations()">
-                                <input type="text" id="edit-lsnm-action-${ls.id}" 
-                                       value="${existing.action || ''}" 
-                                       placeholder="Action *" class="input-field" style="padding: 6px 10px;">
+                                <input type="number" id="lsnm-duration-${ls.id}" min="0" step="0.1" placeholder="Duration (min) *" class="input-field" style="padding: 6px 10px;" oninput="updateCalculations()">
+                                <input type="text" id="lsnm-action-${ls.id}" placeholder="Action *" class="input-field" style="padding: 6px 10px;">
                             </div>
                         </div>
                     </div>
-                `;
-            }).join('');
-        }
-
-        function renderEditableMSItems(masterMS, existingMS) {
-            if (!masterMS || masterMS.length === 0) return '<p class="text-secondary">Tidak ada Minor Stop items</p>';
+                `).join('');
+                document.getElementById('line-stop-non-mesin-list').innerHTML = lsnmHTML;
+            }
             
-            return masterMS.map(ms => {
-                const existing = existingMS.find(e => e.item === ms.item_name) || {};
-                return `
+            if (currentMachineDetails.minorStop.length > 0) {
+                document.getElementById('minor-stop-section').style.display = 'block';
+                const msHTML = currentMachineDetails.minorStop.map(ms => `
                     <div style="background: var(--bg-secondary); padding: 12px; border-radius: 8px; margin-bottom: 8px; border: 1px solid var(--border);">
                         <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
-                            <input type="checkbox" id="edit-ms-check-${ms.id}" 
-                                   ${existing.frequency ? 'checked' : ''}
-                                   onchange="toggleEditMS('${ms.id}')">
-                            <label style="flex: 1; font-weight: 600; cursor: pointer;" for="edit-ms-check-${ms.id}">${ms.item_name}</label>
+                            <input type="checkbox" id="ms-check-${ms.id}" onchange="toggleMinorStop('${ms.id}')">
+                            <label style="flex: 1; font-weight: 600; word-break: break-word;" for="ms-check-${ms.id}">${ms.item_name}</label>
                         </div>
-                        <div id="edit-ms-details-${ms.id}" style="display: ${existing.frequency ? 'block' : 'none'}; padding-left: 32px;">
-                            <input type="number" id="edit-ms-frequency-${ms.id}" 
-                                   value="${existing.frequency || ''}" 
-                                   min="0" placeholder="Frequency (count) *" class="input-field" 
-                                   style="padding: 6px 10px;" oninput="updateEditCalculations()">
+                        <div id="ms-details-${ms.id}" style="display: none; padding-left: 32px;">
+                            <input type="number" id="ms-frequency-${ms.id}" min="0" placeholder="Frequency (count) *" class="input-field" style="padding: 6px 10px;">
                         </div>
                     </div>
-                `;
-            }).join('');
+                `).join('');
+                document.getElementById('minor-stop-list').innerHTML = msHTML;
+            }
+            
+            updateCalculations();
         }
 
-        // Edit toggle functions
-        function toggleEditODT(id) {
-            const checkbox = document.getElementById(`edit-odt-check-${id}`);
-            const input = document.getElementById(`edit-odt-time-${id}`);
-            const item = document.getElementById(`edit-odt-${id}`);
+        function toggleODT(id) {
+            const checkbox = document.getElementById(`odt-check-${id}`);
+            const input = document.getElementById(`odt-time-${id}`);
+            const item = document.getElementById(`odt-${id}`);
             
             if (!checkbox || !input || !item) return;
             
             input.disabled = !checkbox.checked;
             if (checkbox.checked) {
                 item.classList.add('active');
+                const odt = currentMachineDetails.odt.find(o => o.id === id);
+                if (odt) {
+                    checkODTExceed(id, odt.standard_time);
+                }
             } else {
                 item.classList.remove('active');
                 item.classList.remove('exceed');
-                const warning = document.getElementById(`edit-odt-exceed-warning-${id}`);
+                const warning = document.getElementById(`odt-exceed-warning-${id}`);
                 if (warning) warning.style.display = 'none';
             }
             
-            updateEditCalculations();
+            updateCalculations();
         }
 
-        function toggleEditLSM(id) {
-            const checkbox = document.getElementById(`edit-lsm-check-${id}`);
-            const details = document.getElementById(`edit-lsm-details-${id}`);
-            if (!checkbox || !details) return;
-            
-            details.style.display = checkbox.checked ? 'block' : 'none';
-            updateEditCalculations();
-        }
-
-        function toggleEditLSNM(id) {
-            const checkbox = document.getElementById(`edit-lsnm-check-${id}`);
-            const details = document.getElementById(`edit-lsnm-details-${id}`);
-            if (!checkbox || !details) return;
-            
-            details.style.display = checkbox.checked ? 'block' : 'none';
-            updateEditCalculations();
-        }
-
-        function toggleEditMS(id) {
-            const checkbox = document.getElementById(`edit-ms-check-${id}`);
-            const details = document.getElementById(`edit-ms-details-${id}`);
-            if (!checkbox || !details) return;
-            
-            details.style.display = checkbox.checked ? 'block' : 'none';
-        }
-
-        function checkEditODTExceed(id, standardTime) {
-            const checkbox = document.getElementById(`edit-odt-check-${id}`);
+        function checkODTExceed(id, standardTime) {
+            const checkbox = document.getElementById(`odt-check-${id}`);
             if (!checkbox || !checkbox.checked) return;
             
-            const actualTime = parseFloat(document.getElementById(`edit-odt-time-${id}`).value) || 0;
-            const item = document.getElementById(`edit-odt-${id}`);
-            const warning = document.getElementById(`edit-odt-exceed-warning-${id}`);
+            const actualTime = parseFloat(document.getElementById(`odt-time-${id}`).value) || 0;
+            const item = document.getElementById(`odt-${id}`);
+            const warning = document.getElementById(`odt-exceed-warning-${id}`);
             
             if (!item || !warning) return;
             
@@ -2611,63 +3223,91 @@
                 warning.style.display = 'none';
             }
             
-            updateEditCalculations();
+            updateCalculations();
         }
 
-        function checkEditLSMDuration(id) {
-            const duration = parseFloat(document.getElementById(`edit-lsm-duration-${id}`).value) || 0;
-            const actionField = document.getElementById(`edit-lsm-action-${id}`);
-            const wrField = document.getElementById(`edit-lsm-wr-${id}`);
-            const warning = document.getElementById(`edit-lsm-warning-${id}`);
+        function toggleLineStopMesin(id) {
+            const checkbox = document.getElementById(`lsm-check-${id}`);
+            const details = document.getElementById(`lsm-details-${id}`);
+            if (!checkbox || !details) return;
+            
+            details.style.display = checkbox.checked ? 'block' : 'none';
+            updateCalculations();
+        }
+
+        function toggleLineStopNonMesin(id) {
+            const checkbox = document.getElementById(`lsnm-check-${id}`);
+            const details = document.getElementById(`lsnm-details-${id}`);
+            if (!checkbox || !details) return;
+            
+            details.style.display = checkbox.checked ? 'block' : 'none';
+            updateCalculations();
+        }
+        
+        function toggleMinorStop(id) {
+            const checkbox = document.getElementById(`ms-check-${id}`);
+            const details = document.getElementById(`ms-details-${id}`);
+            if (!checkbox || !details) return;
+            
+            details.style.display = checkbox.checked ? 'block' : 'none';
+        }
+
+        function checkLSMDuration(id) {
+            const duration = parseFloat(document.getElementById(`lsm-duration-${id}`).value) || 0;
+            const actionField = document.getElementById(`lsm-action-${id}`);
+            const wrField = document.getElementById(`lsm-wr-${id}`);
+            const warning = document.getElementById(`lsm-warning-${id}`);
             
             if (!actionField || !wrField || !warning) return;
             
             if (duration >= 180) {
                 warning.style.display = 'block';
                 warning.textContent = '⚠️ Duration ≥ 180 minutes: Action and WR Number are REQUIRED';
+                actionField.required = true;
+                wrField.required = true;
             } else {
                 warning.style.display = 'none';
+                actionField.required = false;
+                wrField.required = false;
             }
             
-            updateEditCalculations();
+            updateCalculations();
         }
 
-        // Custom items for edit
-        function addCustomLSMToEdit() {
+        function addCustomLineStopMesin() {
             customLSMCounter++;
-            const container = document.getElementById('edit-custom-lsm-container');
+            const container = document.getElementById('custom-line-stop-mesin-container');
             if (!container) return;
             
-            const id = customLSMCounter;
             const html = `
-                <div id="edit-custom-lsm-${id}" style="background: rgba(102, 125, 234, 0.1); padding: 12px; border-radius: 8px; margin-top: 12px; border: 2px solid var(--accent-primary);">
+                <div id="custom-lsm-${customLSMCounter}" style="background: rgba(102, 125, 234, 0.1); padding: 12px; border-radius: 8px; margin-top: 12px; border: 2px solid var(--accent-primary);">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
-                        <strong style="color: var(--accent-primary);">Custom Line Stop Mesin #${id}</strong>
-                        <button type="button" class="btn btn-danger" style="padding: 4px 8px; font-size: 12px;" onclick="removeEditCustomLSM(${id})">Remove</button>
+                        <strong style="color: var(--accent-primary); word-break: break-word;">Custom Line Stop Mesin #${customLSMCounter}</strong>
+                        <button type="button" class="btn btn-danger" style="padding: 4px 8px; font-size: 12px; white-space: nowrap;" onclick="removeCustomLSM(${customLSMCounter})">Remove</button>
                     </div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
-                        <input type="text" id="edit-custom-lsm-item-${id}" placeholder="Item Name *" class="input-field" style="padding: 6px 10px; text-transform: uppercase;">
-                        <input type="number" id="edit-custom-lsm-duration-${id}" min="0" step="0.1" placeholder="Duration (min) *" class="input-field" style="padding: 6px 10px;" oninput="checkEditCustomLSMDuration(${id})">
+                        <input type="text" id="custom-lsm-item-${customLSMCounter}" placeholder="Item Name *" class="input-field" style="padding: 6px 10px; text-transform: uppercase;">
+                        <input type="number" id="custom-lsm-duration-${customLSMCounter}" min="0" step="0.1" placeholder="Duration (min) *" class="input-field" style="padding: 6px 10px;" oninput="checkCustomLSMDuration(${customLSMCounter})">
                     </div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                        <input type="text" id="edit-custom-lsm-action-${id}" placeholder="Action" class="input-field" style="padding: 6px 10px;">
-                        <input type="text" id="edit-custom-lsm-wr-${id}" placeholder="No WR" class="input-field" style="padding: 6px 10px;">
+                        <input type="text" id="custom-lsm-action-${customLSMCounter}" placeholder="Action" class="input-field" style="padding: 6px 10px;">
+                        <input type="text" id="custom-lsm-wr-${customLSMCounter}" placeholder="No WR" class="input-field" style="padding: 6px 10px;">
                     </div>
-                    <div id="edit-custom-lsm-warning-${id}" style="display: none; margin-top: 8px; padding: 8px; background: rgba(239, 68, 68, 0.1); border: 1px solid var(--danger); border-radius: 6px; font-size: 12px; color: var(--danger);"></div>
+                    <div id="custom-lsm-warning-${customLSMCounter}" style="display: none; margin-top: 8px; padding: 8px; background: rgba(239, 68, 68, 0.1); border: 1px solid var(--danger); border-radius: 6px; font-size: 12px; color: var(--danger);"></div>
                 </div>
             `;
             container.insertAdjacentHTML('beforeend', html);
         }
 
-        function removeEditCustomLSM(id) {
-            const element = document.getElementById(`edit-custom-lsm-${id}`);
+        function removeCustomLSM(id) {
+            const element = document.getElementById(`custom-lsm-${id}`);
             if (element) element.remove();
-            updateEditCalculations();
+            updateCalculations();
         }
 
-        function checkEditCustomLSMDuration(id) {
-            const duration = parseFloat(document.getElementById(`edit-custom-lsm-duration-${id}`).value) || 0;
-            const warning = document.getElementById(`edit-custom-lsm-warning-${id}`);
+        function checkCustomLSMDuration(id) {
+            const duration = parseFloat(document.getElementById(`custom-lsm-duration-${id}`).value) || 0;
+            const warning = document.getElementById(`custom-lsm-warning-${id}`);
             
             if (!warning) return;
             
@@ -2678,80 +3318,90 @@
                 warning.style.display = 'none';
             }
             
-            updateEditCalculations();
+            updateCalculations();
         }
 
-        function addCustomLSNMToEdit() {
+        function addCustomLineStopNonMesin() {
             customLSNMCounter++;
-            const container = document.getElementById('edit-custom-lsnm-container');
+            const container = document.getElementById('custom-line-stop-non-mesin-container');
             if (!container) return;
             
-            const id = customLSNMCounter;
             const html = `
-                <div id="edit-custom-lsnm-${id}" style="background: rgba(245, 158, 11, 0.1); padding: 12px; border-radius: 8px; margin-top: 12px; border: 2px solid var(--warning);">
+                <div id="custom-lsnm-${customLSNMCounter}" style="background: rgba(245, 158, 11, 0.1); padding: 12px; border-radius: 8px; margin-top: 12px; border: 2px solid var(--warning);">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
-                        <strong style="color: var(--warning);">Custom Line Stop Non Mesin #${id}</strong>
-                        <button type="button" class="btn btn-danger" style="padding: 4px 8px; font-size: 12px;" onclick="removeEditCustomLSNM(${id})">Remove</button>
+                        <strong style="color: var(--warning); word-break: break-word;">Custom Line Stop Non Mesin #${customLSNMCounter}</strong>
+                        <button type="button" class="btn btn-danger" style="padding: 4px 8px; font-size: 12px; white-space: nowrap;" onclick="removeCustomLSNM(${customLSNMCounter})">Remove</button>
                     </div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                        <input type="text" id="edit-custom-lsnm-item-${id}" placeholder="Item Name *" class="input-field" style="padding: 6px 10px; text-transform: uppercase;">
-                        <input type="number" id="edit-custom-lsnm-duration-${id}" min="0" step="0.1" placeholder="Duration (min) *" class="input-field" style="padding: 6px 10px;" oninput="updateEditCalculations()">
+                        <input type="text" id="custom-lsnm-item-${customLSNMCounter}" placeholder="Item Name *" class="input-field" style="padding: 6px 10px; text-transform: uppercase;">
+                        <input type="number" id="custom-lsnm-duration-${customLSNMCounter}" min="0" step="0.1" placeholder="Duration (min) *" class="input-field" style="padding: 6px 10px;" oninput="updateCalculations()">
                     </div>
-                    <input type="text" id="edit-custom-lsnm-action-${id}" placeholder="Action *" class="input-field" style="margin-top: 8px; padding: 6px 10px;">
+                    <input type="text" id="custom-lsnm-action-${customLSNMCounter}" placeholder="Action *" class="input-field" style="margin-top: 8px; padding: 6px 10px;">
                 </div>
             `;
             container.insertAdjacentHTML('beforeend', html);
         }
 
-        function removeEditCustomLSNM(id) {
-            const element = document.getElementById(`edit-custom-lsnm-${id}`);
+        function removeCustomLSNM(id) {
+            const element = document.getElementById(`custom-lsnm-${id}`);
             if (element) element.remove();
-            updateEditCalculations();
+            updateCalculations();
         }
-
-        function addCustomMSToEdit() {
+        
+        function addCustomMinorStop() {
             customMSCounter++;
-            const container = document.getElementById('edit-custom-ms-container');
+            const container = document.getElementById('custom-minor-stop-container');
             if (!container) return;
             
-            const id = customMSCounter;
             const html = `
-                <div id="edit-custom-ms-${id}" style="background: rgba(118, 75, 162, 0.1); padding: 12px; border-radius: 8px; margin-top: 12px; border: 2px solid var(--accent-secondary);">
+                <div id="custom-ms-${customMSCounter}" style="background: rgba(118, 75, 162, 0.1); padding: 12px; border-radius: 8px; margin-top: 12px; border: 2px solid var(--accent-secondary);">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
-                        <strong style="color: var(--accent-secondary);">Custom Minor Stop #${id}</strong>
-                        <button type="button" class="btn btn-danger" style="padding: 4px 8px; font-size: 12px;" onclick="removeEditCustomMS(${id})">Remove</button>
+                        <strong style="color: var(--accent-secondary); word-break: break-word;">Custom Minor Stop #${customMSCounter}</strong>
+                        <button type="button" class="btn btn-danger" style="padding: 4px 8px; font-size: 12px; white-space: nowrap;" onclick="removeCustomMS(${customMSCounter})">Remove</button>
                     </div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                        <input type="text" id="edit-custom-ms-item-${id}" placeholder="Item Name *" class="input-field" style="padding: 6px 10px; text-transform: uppercase;">
-                        <input type="number" id="edit-custom-ms-frequency-${id}" min="0" placeholder="Frequency (count) *" class="input-field" style="padding: 6px 10px;">
+                        <input type="text" id="custom-ms-item-${customMSCounter}" placeholder="Item Name *" class="input-field" style="padding: 6px 10px; text-transform: uppercase;">
+                        <input type="number" id="custom-ms-frequency-${customMSCounter}" min="0" placeholder="Frequency (count) *" class="input-field" style="padding: 6px 10px;">
                     </div>
                 </div>
             `;
             container.insertAdjacentHTML('beforeend', html);
         }
-
-        function removeEditCustomMS(id) {
-            const element = document.getElementById(`edit-custom-ms-${id}`);
+        
+        function removeCustomMS(id) {
+            const element = document.getElementById(`custom-ms-${id}`);
             if (element) element.remove();
         }
 
-        // Update calculations in edit modal
-        function updateEditCalculations() {
-            if (!editingMachineDetails || !editingRecordData) return;
+        function updateCalculations() {
+            const shift = document.getElementById('input-shift')?.value;
+            const output = parseFloat(document.getElementById('input-output')?.value) || 0;
+            const reject = parseFloat(document.getElementById('input-reject')?.value) || 0;
             
-            const shift = document.getElementById('edit-shift')?.value;
-            const output = parseFloat(document.getElementById('edit-output')?.value) || 0;
-            const reject = parseFloat(document.getElementById('edit-reject')?.value) || 0;
+            if (!currentMachineData || !shift) {
+                const targetText = document.getElementById('target-text');
+                const targetDetails = document.getElementById('target-details');
+                if (targetText) {
+                    targetText.innerHTML = '<span style="color: var(--text-secondary); word-break: break-word;">Select Machine and Shift to see target</span>';
+                }
+                if (targetDetails) {
+                    targetDetails.innerHTML = 'Target akan otomatis dihitung berdasarkan available time (shift - ODT - line stops) × target per minute';
+                }
+                if (output === 0) {
+                    const results = document.getElementById('calculated-results');
+                    if (results) results.style.display = 'none';
+                }
+                return;
+            }
             
-            // Collect ODT data
             const odtData = [];
-            if (editingMachineDetails.odt) {
-                editingMachineDetails.odt.forEach(odt => {
-                    const checkbox = document.getElementById(`edit-odt-check-${odt.id}`);
+            if (currentMachineDetails && currentMachineDetails.odt) {
+                currentMachineDetails.odt.forEach(odt => {
+                    const checkbox = document.getElementById(`odt-check-${odt.id}`);
                     if (!checkbox) return;
                     
                     const checked = checkbox.checked;
-                    const input = document.getElementById(`edit-odt-time-${odt.id}`);
+                    const input = document.getElementById(`odt-time-${odt.id}`);
                     const actualTime = input?.value || 0;
                     odtData.push({
                         name: odt.odt_name,
@@ -2762,16 +3412,15 @@
                 });
             }
             
-            // Collect LSM data
             const lineStopMesinData = [];
-            if (editingMachineDetails.lineStopMesin) {
-                editingMachineDetails.lineStopMesin.forEach(ls => {
-                    const checkbox = document.getElementById(`edit-lsm-check-${ls.id}`);
+            if (currentMachineDetails && currentMachineDetails.lineStopMesin) {
+                currentMachineDetails.lineStopMesin.forEach(ls => {
+                    const checkbox = document.getElementById(`lsm-check-${ls.id}`);
                     if (!checkbox || !checkbox.checked) return;
                     
-                    const duration = document.getElementById(`edit-lsm-duration-${ls.id}`)?.value || 0;
-                    const action = document.getElementById(`edit-lsm-action-${ls.id}`)?.value || '';
-                    const wr = document.getElementById(`edit-lsm-wr-${ls.id}`)?.value || '';
+                    const duration = document.getElementById(`lsm-duration-${ls.id}`)?.value || 0;
+                    const action = document.getElementById(`lsm-action-${ls.id}`)?.value || '';
+                    const wr = document.getElementById(`lsm-wr-${ls.id}`)?.value || '';
                     lineStopMesinData.push({
                         item: ls.item_name,
                         duration: duration,
@@ -2781,13 +3430,12 @@
                 });
             }
             
-            // Custom LSM
             for (let i = 1; i <= customLSMCounter; i++) {
-                const itemEl = document.getElementById(`edit-custom-lsm-item-${i}`);
+                const itemEl = document.getElementById(`custom-lsm-item-${i}`);
                 if (itemEl && itemEl.value) {
-                    const duration = document.getElementById(`edit-custom-lsm-duration-${i}`)?.value || 0;
-                    const action = document.getElementById(`edit-custom-lsm-action-${i}`)?.value || '';
-                    const wr = document.getElementById(`edit-custom-lsm-wr-${i}`)?.value || '';
+                    const duration = document.getElementById(`custom-lsm-duration-${i}`)?.value || 0;
+                    const action = document.getElementById(`custom-lsm-action-${i}`)?.value || '';
+                    const wr = document.getElementById(`custom-lsm-wr-${i}`)?.value || '';
                     lineStopMesinData.push({
                         item: itemEl.value,
                         duration: duration,
@@ -2797,15 +3445,14 @@
                 }
             }
             
-            // Collect LSNM data
             const lineStopNonMesinData = [];
-            if (editingMachineDetails.lineStopNonMesin) {
-                editingMachineDetails.lineStopNonMesin.forEach(ls => {
-                    const checkbox = document.getElementById(`edit-lsnm-check-${ls.id}`);
+            if (currentMachineDetails && currentMachineDetails.lineStopNonMesin) {
+                currentMachineDetails.lineStopNonMesin.forEach(ls => {
+                    const checkbox = document.getElementById(`lsnm-check-${ls.id}`);
                     if (!checkbox || !checkbox.checked) return;
                     
-                    const duration = document.getElementById(`edit-lsnm-duration-${ls.id}`)?.value || 0;
-                    const action = document.getElementById(`edit-lsnm-action-${ls.id}`)?.value || '';
+                    const duration = document.getElementById(`lsnm-duration-${ls.id}`)?.value || 0;
+                    const action = document.getElementById(`lsnm-action-${ls.id}`)?.value || '';
                     lineStopNonMesinData.push({
                         item: ls.item_name,
                         duration: duration,
@@ -2814,12 +3461,11 @@
                 });
             }
             
-            // Custom LSNM
             for (let i = 1; i <= customLSNMCounter; i++) {
-                const itemEl = document.getElementById(`edit-custom-lsnm-item-${i}`);
+                const itemEl = document.getElementById(`custom-lsnm-item-${i}`);
                 if (itemEl && itemEl.value) {
-                    const duration = document.getElementById(`edit-custom-lsnm-duration-${i}`)?.value || 0;
-                    const action = document.getElementById(`edit-custom-lsnm-action-${i}`)?.value || '';
+                    const duration = document.getElementById(`custom-lsnm-duration-${i}`)?.value || 0;
+                    const action = document.getElementById(`custom-lsnm-action-${i}`)?.value || '';
                     lineStopNonMesinData.push({
                         item: itemEl.value,
                         duration: duration,
@@ -2827,12 +3473,10 @@
                     });
                 }
             }
-            
-            const machine = allMachines.find(m => m.id === editingRecordData.machine_id);
             
             const formData = {
                 shift: shift,
-                targetPerMinute: machine?.target_per_minute || 0,
+                targetPerMinute: currentMachineData.target_per_minute,
                 actualOutput: output,
                 reject: reject,
                 odtData: odtData,
@@ -2840,258 +3484,399 @@
                 lineStopNonMesinData: lineStopNonMesinData
             };
             
+            // Cek total durasi tidak melebihi jam kerja
+            const totalDuration = calculateTotalDuration(formData);
+            const shiftMinutes = SHIFTS[shift]?.minutes || 0;
+            const durationWarning = document.getElementById('duration-warning');
+            
+            if (totalDuration > shiftMinutes) {
+                durationWarning.style.display = 'flex';
+            } else {
+                durationWarning.style.display = 'none';
+            }
+            
             const results = calculateOEE(formData);
             
-            // Update preview
-            document.getElementById('edit-calc-a').textContent = results.availabilityActual.toFixed(1) + '%';
-            document.getElementById('edit-calc-p').textContent = results.performance.toFixed(1) + '%';
-            document.getElementById('edit-calc-q').textContent = results.quality.toFixed(1) + '%';
-            document.getElementById('edit-calc-oee').textContent = results.oeeActual.toFixed(1) + '%';
+            const odtExceedContainer = document.getElementById('odt-exceed-list');
+            if (odtExceedContainer) {
+                if (results.odtExceeds.length > 0) {
+                    const exceedHTML = `
+                        <div style="background: rgba(245, 158, 11, 0.15); padding: 16px; border-radius: 8px; border: 2px solid var(--warning); margin-top: 16px;">
+                            <h5 style="font-weight: 700; color: var(--warning); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; word-break: break-word;">
+                                ⚠️ Auto-Generated Line Stop Non Mesin (from ODT Exceed)
+                            </h5>
+                            ${results.odtExceeds.map(ex => `
+                                <div style="background: white; padding: 10px; border-radius: 6px; margin-bottom: 8px; border-left: 4px solid var(--warning);">
+                                    <div style="font-weight: 600; color: var(--text-primary); word-break: break-word;">${ex.item}</div>
+                                    <div style="font-size: 13px; color: var(--text-secondary); margin-top: 4px; word-break: break-word;">
+                                        Duration: <strong>${ex.duration.toFixed(1)} minutes</strong> | Action: ${ex.action}
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                    odtExceedContainer.innerHTML = exceedHTML;
+                } else {
+                    odtExceedContainer.innerHTML = '';
+                }
+            }
             
-            // Color coding
-            document.getElementById('edit-calc-a').style.color = results.availabilityActual >= 93 ? 'var(--success)' : 'var(--danger)';
-            document.getElementById('edit-calc-p').style.color = results.performance >= 98 ? 'var(--success)' : 'var(--danger)';
-            document.getElementById('edit-calc-q').style.color = results.quality >= 99 ? 'var(--success)' : 'var(--danger)';
-            document.getElementById('edit-calc-oee').style.color = results.oeeActual >= 88 ? 'var(--success)' : 'var(--danger)';
+            const targetText = document.getElementById('target-text');
+            const targetDetails = document.getElementById('target-details');
+            
+            if (targetText && targetDetails) {
+                const targetOutput = Math.round(results.remainingTime * currentMachineData.target_per_minute);
+                if (currentMachineData.target_per_minute > 0) {
+                    targetText.innerHTML = `
+                        <strong style="font-size: 24px; color: var(--accent-primary); word-break: break-word;">${targetOutput.toLocaleString('id-ID')} units</strong>
+                    `;
+                    targetDetails.innerHTML = `
+                        📊 <strong>Calculation:</strong> ${results.remainingTime.toFixed(0)} minutes (available time) × ${currentMachineData.target_per_minute}/min (target per minute)<br>
+                        ⏱️ <strong>Available Time Breakdown:</strong> ${results.shiftMinutes} min (shift) - ${results.totalODT.toFixed(0)} min (ODT) - ${results.totalLineStopMesin.toFixed(0)} min (LS Mesin) - ${results.totalLineStopNonMesin.toFixed(0)} min (LS Non Mesin) = <strong>${results.remainingTime.toFixed(0)} min</strong>
+                    `;
+                } else {
+                    targetText.innerHTML = `
+                        <strong style="font-size: 20px; color: var(--text-secondary); word-break: break-word;">Target per minute = 0</strong>
+                    `;
+                    targetDetails.innerHTML = `
+                        📊 <strong>Machine ini tidak memiliki target output.</strong><br>
+                        ⏱️ <strong>Performance dan Quality akan dihitung sebagai 100%.</strong>
+                    `;
+                }
+            }
+            
+            const resultsElement = document.getElementById('calculated-results');
+            if (resultsElement) {
+                resultsElement.style.display = 'block';
+                
+                const aActualEl = document.getElementById('calc-a-actual');
+                const a365El = document.getElementById('calc-a-365');
+                const pEl = document.getElementById('calc-p');
+                const qEl = document.getElementById('calc-q');
+                const oeeActualEl = document.getElementById('calc-oee-actual');
+                const oee365El = document.getElementById('calc-oee-365');
+                
+                if (aActualEl) {
+                    aActualEl.textContent = `${results.availabilityActual.toFixed(1)}%`;
+                    aActualEl.style.color = results.availabilityActual >= 93 ? 'var(--success)' : 'var(--danger)';
+                }
+                
+                if (a365El) {
+                    a365El.textContent = `${results.availability365.toFixed(1)}%`;
+                    a365El.style.color = 'var(--accent-primary)';
+                }
+                
+                if (pEl) {
+                    pEl.textContent = `${results.performance.toFixed(1)}%`;
+                    pEl.style.color = results.performance >= 98 ? 'var(--success)' : 'var(--danger)';
+                }
+                
+                if (qEl) {
+                    qEl.textContent = `${results.quality.toFixed(1)}%`;
+                    qEl.style.color = results.quality >= 99 ? 'var(--success)' : 'var(--danger)';
+                }
+                
+                if (oeeActualEl) {
+                    oeeActualEl.textContent = `${results.oeeActual.toFixed(1)}%`;
+                    oeeActualEl.style.color = results.oeeActual >= 88 ? 'var(--success)' : 'var(--danger)';
+                }
+                
+                if (oee365El) {
+                    oee365El.textContent = `${results.oee365.toFixed(1)}%`;
+                    oee365El.style.color = results.oee365 >= 55 ? 'var(--success)' : 'var(--danger)';
+                }
+            }
         }
 
-        async function updateOEERecordFromEdit() {
-            if (!editingRecordId || !editingMachineDetails || !editingRecordData) {
-                showToast('Error: Data tidak lengkap', 'error');
-                return;
-            }
-
-            // Validasi required fields
-            const pic = document.getElementById('edit-pic')?.value.toUpperCase();
-            const product = document.getElementById('edit-product')?.value.toUpperCase();
-            const batch = document.getElementById('edit-batch')?.value.toUpperCase();
+        async function saveOEEData() {
+            const date = document.getElementById('input-date')?.value;
+            const shift = document.getElementById('input-shift')?.value;
+            const machineId = document.getElementById('input-machine')?.value;
+            const pic = document.getElementById('input-pic')?.value.toUpperCase() || '';
+            const productCode = document.getElementById('input-product')?.value.toUpperCase() || '';
+            const batchNumber = document.getElementById('input-batch')?.value.toUpperCase() || '';
+            const output = parseFloat(document.getElementById('input-output')?.value) || 0;
+            const reject = parseFloat(document.getElementById('input-reject')?.value) || 0;
+            const notes = document.getElementById('input-notes')?.value || '';
             
-            if (!pic || !product || !batch) {
-                showToast('PIC, Kode Produk, dan Nomor Batch harus diisi', 'error');
+            if (!date || !shift || !machineId || !pic || !productCode || !batchNumber) {
+                showToast('Please fill all required fields', 'error');
                 return;
             }
-
-            showLoading('Menyimpan perubahan...');
-
-            try {
-                // Collect ODT data
-                const odtData = [];
-                if (editingMachineDetails.odt) {
-                    editingMachineDetails.odt.forEach(odt => {
-                        const checkbox = document.getElementById(`edit-odt-check-${odt.id}`);
-                        if (!checkbox) return;
-                        
-                        const checked = checkbox.checked;
-                        const input = document.getElementById(`edit-odt-time-${odt.id}`);
-                        const actualTime = input?.value || 0;
-                        odtData.push({
-                            name: odt.odt_name,
-                            standardTime: odt.standard_time,
-                            actualTime: actualTime,
-                            checked: checked
-                        });
+            
+            if (currentMachineData && currentMachineData.target_per_minute > 0 && output === 0) {
+                showToast('Actual Output is required for machines with target per minute > 0', 'error');
+                return;
+            }
+            
+            if (!currentMachineData) {
+                showToast('Please select a machine', 'error');
+                return;
+            }
+            
+            const odtData = [];
+            if (currentMachineDetails && currentMachineDetails.odt) {
+                currentMachineDetails.odt.forEach(odt => {
+                    const checkbox = document.getElementById(`odt-check-${odt.id}`);
+                    if (!checkbox) return;
+                    
+                    const checked = checkbox.checked;
+                    const input = document.getElementById(`odt-time-${odt.id}`);
+                    const actualTime = input?.value || 0;
+                    odtData.push({
+                        name: odt.odt_name,
+                        standardTime: odt.standard_time,
+                        actualTime: actualTime,
+                        checked: checked
                     });
-                }
-                
-                // Collect LSM data
-                const lineStopMesinData = [];
-                if (editingMachineDetails.lineStopMesin) {
-                    editingMachineDetails.lineStopMesin.forEach(ls => {
-                        const checkbox = document.getElementById(`edit-lsm-check-${ls.id}`);
-                        if (!checkbox || !checkbox.checked) return;
-                        
-                        const duration = parseFloat(document.getElementById(`edit-lsm-duration-${ls.id}`)?.value) || 0;
-                        const action = document.getElementById(`edit-lsm-action-${ls.id}`)?.value || '';
-                        const wr = document.getElementById(`edit-lsm-wr-${ls.id}`)?.value || '';
-                        
-                        if (duration >= 180 && (!action || !wr)) {
-                            throw new Error(`Line Stop Mesin "${ls.item_name}": Action dan WR wajib diisi untuk durasi ≥ 180 menit`);
-                        }
-                        
-                        lineStopMesinData.push({
-                            item: ls.item_name,
-                            duration: duration,
-                            action: action,
-                            wr: wr
-                        });
-                    });
-                }
-                
-                // Custom LSM
-                for (let i = 1; i <= customLSMCounter; i++) {
-                    const itemEl = document.getElementById(`edit-custom-lsm-item-${i}`);
-                    if (itemEl && itemEl.value) {
-                        const item = itemEl.value;
-                        const duration = parseFloat(document.getElementById(`edit-custom-lsm-duration-${i}`)?.value) || 0;
-                        const action = document.getElementById(`edit-custom-lsm-action-${i}`)?.value || '';
-                        const wr = document.getElementById(`edit-custom-lsm-wr-${i}`)?.value || '';
-                        
-                        if (!duration) {
-                            throw new Error(`Custom Line Stop Mesin "${item}": Duration wajib diisi`);
-                        }
-                        
-                        if (duration >= 180 && (!action || !wr)) {
-                            throw new Error(`Custom Line Stop Mesin "${item}": Action dan WR wajib diisi untuk durasi ≥ 180 menit`);
-                        }
-                        
-                        lineStopMesinData.push({ item, duration, action, wr });
+                });
+            }
+            
+            const lineStopMesinData = [];
+            if (currentMachineDetails && currentMachineDetails.lineStopMesin) {
+                currentMachineDetails.lineStopMesin.forEach(ls => {
+                    const checkbox = document.getElementById(`lsm-check-${ls.id}`);
+                    if (!checkbox || !checkbox.checked) return;
+                    
+                    const duration = parseFloat(document.getElementById(`lsm-duration-${ls.id}`)?.value) || 0;
+                    const action = document.getElementById(`lsm-action-${ls.id}`)?.value || '';
+                    const wr = document.getElementById(`lsm-wr-${ls.id}`)?.value || '';
+                    
+                    if (duration >= 180 && (!action || !wr)) {
+                        showToast(`Line Stop Mesin "${ls.item_name}": Action and WR required for duration ≥ 180 min`, 'error');
+                        throw new Error('Validation failed');
                     }
-                }
-                
-                // Collect LSNM data
-                const lineStopNonMesinData = [];
-                if (editingMachineDetails.lineStopNonMesin) {
-                    editingMachineDetails.lineStopNonMesin.forEach(ls => {
-                        const checkbox = document.getElementById(`edit-lsnm-check-${ls.id}`);
-                        if (!checkbox || !checkbox.checked) return;
-                        
-                        const duration = parseFloat(document.getElementById(`edit-lsnm-duration-${ls.id}`)?.value) || 0;
-                        const action = document.getElementById(`edit-lsnm-action-${ls.id}`)?.value || '';
-                        
-                        if (!action) {
-                            throw new Error(`Line Stop Non Mesin "${ls.item_name}": Action wajib diisi`);
-                        }
-                        
-                        lineStopNonMesinData.push({
-                            item: ls.item_name,
-                            duration: duration,
-                            action: action
-                        });
+                    
+                    lineStopMesinData.push({
+                        item: ls.item_name,
+                        duration: duration,
+                        action: action,
+                        wr: wr
                     });
-                }
-                
-                // Custom LSNM
-                for (let i = 1; i <= customLSNMCounter; i++) {
-                    const itemEl = document.getElementById(`edit-custom-lsnm-item-${i}`);
-                    if (itemEl && itemEl.value) {
-                        const item = itemEl.value;
-                        const duration = parseFloat(document.getElementById(`edit-custom-lsnm-duration-${i}`)?.value) || 0;
-                        const action = document.getElementById(`edit-custom-lsnm-action-${i}`)?.value || '';
-                        
-                        if (!duration || !action) {
-                            throw new Error(`Custom Line Stop Non Mesin "${item}": Duration dan Action wajib diisi`);
-                        }
-                        
-                        lineStopNonMesinData.push({ item, duration, action });
+                });
+            }
+            
+            for (let i = 1; i <= customLSMCounter; i++) {
+                const itemEl = document.getElementById(`custom-lsm-item-${i}`);
+                if (itemEl && itemEl.value) {
+                    const item = itemEl.value;
+                    const duration = parseFloat(document.getElementById(`custom-lsm-duration-${i}`)?.value) || 0;
+                    const action = document.getElementById(`custom-lsm-action-${i}`)?.value || '';
+                    const wr = document.getElementById(`custom-lsm-wr-${i}`)?.value || '';
+                    
+                    if (!duration) {
+                        showToast(`Custom Line Stop Mesin "${item}": Duration is required`, 'error');
+                        throw new Error('Validation failed');
                     }
+                    
+                    if (duration >= 180 && (!action || !wr)) {
+                        showToast(`Custom Line Stop Mesin "${item}": Action and WR required for duration ≥ 180 min`, 'error');
+                        throw new Error('Validation failed');
+                    }
+                    
+                    lineStopMesinData.push({ item, duration, action, wr });
                 }
-                
-                // Collect MS data
-                const minorStopData = [];
-                let totalMinorStopCount = 0;
-                
-                if (editingMachineDetails.minorStop) {
-                    editingMachineDetails.minorStop.forEach(ms => {
-                        const checkbox = document.getElementById(`edit-ms-check-${ms.id}`);
-                        if (!checkbox || !checkbox.checked) return;
-                        
-                        const frequency = parseFloat(document.getElementById(`edit-ms-frequency-${ms.id}`)?.value) || 0;
-                        
-                        if (frequency > 0) {
-                            minorStopData.push({
-                                item: ms.item_name,
-                                frequency: frequency
-                            });
-                            totalMinorStopCount += frequency;
-                        }
+            }
+            
+            const lineStopNonMesinData = [];
+            if (currentMachineDetails && currentMachineDetails.lineStopNonMesin) {
+                currentMachineDetails.lineStopNonMesin.forEach(ls => {
+                    const checkbox = document.getElementById(`lsnm-check-${ls.id}`);
+                    if (!checkbox || !checkbox.checked) return;
+                    
+                    const duration = parseFloat(document.getElementById(`lsnm-duration-${ls.id}`)?.value) || 0;
+                    const action = document.getElementById(`lsnm-action-${ls.id}`)?.value || '';
+                    
+                    if (!action) {
+                        showToast(`Line Stop Non Mesin "${ls.item_name}": Action is required`, 'error');
+                        throw new Error('Validation failed');
+                    }
+                    
+                    lineStopNonMesinData.push({
+                        item: ls.item_name,
+                        duration: duration,
+                        action: action
                     });
+                });
+            }
+            
+            for (let i = 1; i <= customLSNMCounter; i++) {
+                const itemEl = document.getElementById(`custom-lsnm-item-${i}`);
+                if (itemEl && itemEl.value) {
+                    const item = itemEl.value;
+                    const duration = parseFloat(document.getElementById(`custom-lsnm-duration-${i}`)?.value) || 0;
+                    const action = document.getElementById(`custom-lsnm-action-${i}`)?.value || '';
+                    
+                    if (!duration || !action) {
+                        showToast(`Custom Line Stop Non Mesin "${item}": Duration and Action are required`, 'error');
+                        throw new Error('Validation failed');
+                    }
+                    
+                    lineStopNonMesinData.push({ item, duration, action });
                 }
-                
-                // Custom MS
-                for (let i = 1; i <= customMSCounter; i++) {
-                    const itemEl = document.getElementById(`edit-custom-ms-item-${i}`);
-                    if (itemEl && itemEl.value) {
-                        const item = itemEl.value;
-                        const frequency = parseFloat(document.getElementById(`edit-custom-ms-frequency-${i}`)?.value) || 0;
-                        
-                        if (!frequency) {
-                            throw new Error(`Custom Minor Stop "${item}": Frequency wajib diisi`);
-                        }
-                        
-                        minorStopData.push({ item, frequency });
+            }
+            
+            const minorStopData = [];
+            let totalMinorStopCount = 0;
+            
+            if (currentMachineDetails && currentMachineDetails.minorStop) {
+                currentMachineDetails.minorStop.forEach(ms => {
+                    const checkbox = document.getElementById(`ms-check-${ms.id}`);
+                    if (!checkbox || !checkbox.checked) return;
+                    
+                    const frequency = parseFloat(document.getElementById(`ms-frequency-${ms.id}`)?.value) || 0;
+                    
+                    if (frequency > 0) {
+                        minorStopData.push({
+                            item: ms.item_name,
+                            frequency: frequency
+                        });
                         totalMinorStopCount += frequency;
                     }
+                });
+            }
+            
+            for (let i = 1; i <= customMSCounter; i++) {
+                const itemEl = document.getElementById(`custom-ms-item-${i}`);
+                if (itemEl && itemEl.value) {
+                    const item = itemEl.value;
+                    const frequency = parseFloat(document.getElementById(`custom-ms-frequency-${i}`)?.value) || 0;
+                    
+                    if (!frequency) {
+                        showToast(`Custom Minor Stop "${item}": Frequency is required`, 'error');
+                        throw new Error('Validation failed');
+                    }
+                    
+                    minorStopData.push({ item, frequency });
+                    totalMinorStopCount += frequency;
                 }
-                
-                const output = parseFloat(document.getElementById('edit-output')?.value) || 0;
-                const reject = parseFloat(document.getElementById('edit-reject')?.value) || 0;
-                
-                // Hitung ulang OEE
-                const machine = allMachines.find(m => m.id === editingRecordData.machine_id);
-                
-                const formData = {
-                    shift: document.getElementById('edit-shift')?.value,
-                    targetPerMinute: machine?.target_per_minute || 0,
-                    actualOutput: output,
-                    reject: reject,
-                    odtData: odtData,
-                    lineStopMesinData: lineStopMesinData,
-                    lineStopNonMesinData: lineStopNonMesinData
-                };
-                
-                const results = calculateOEE(formData);
-                
-                // Siapkan data untuk update
-                const updatedRecord = {
-                    pic: pic,
-                    product_code: product,
-                    batch_number: batch,
-                    actual_output: output,
-                    reject: reject,
-                    odt_data: odtData,
-                    line_stop_mesin_data: lineStopMesinData,
-                    line_stop_non_mesin_data: [...lineStopNonMesinData, ...results.odtExceeds],
-                    minor_stop_data: minorStopData,
-                    minor_stop_count: totalMinorStopCount,
-                    availability_actual: results.availabilityActual,
-                    availability_365: results.availability365,
-                    performance: results.performance,
-                    quality: results.quality,
-                    oee_actual: results.oeeActual,
-                    oee_365: results.oee365,
-                    notes: document.getElementById('edit-notes')?.value || ''
-                };
-                
-                // Update ke database
-                await updateOEERecord(editingRecordId, updatedRecord);
-                
-                // Refresh data
-                await loadOEERecords();
-                
+            }
+            
+            const formData = {
+                shift: shift,
+                targetPerMinute: currentMachineData.target_per_minute,
+                actualOutput: output,
+                reject: reject,
+                odtData: odtData,
+                lineStopMesinData: lineStopMesinData,
+                lineStopNonMesinData: lineStopNonMesinData
+            };
+            
+            // Validasi total durasi tidak melebihi jam kerja
+            const totalDuration = calculateTotalDuration(formData);
+            const shiftMinutes = SHIFTS[shift]?.minutes || 0;
+            
+            if (totalDuration > shiftMinutes) {
+                showToast('Durasi kegiatan melebihi jam kerja, cek kembali data availability anda.', 'error');
+                return;
+            }
+            
+            const results = calculateOEE(formData);
+            
+            const finalLineStopNonMesinData = [...lineStopNonMesinData, ...results.odtExceeds];
+            
+            const recordData = {
+                date: date,
+                shift: shift,
+                shift_minutes: SHIFTS[shift].minutes,
+                machine_name: currentMachineData.machine_name,
+                machine_id: machineId,
+                pic: pic,
+                product_code: productCode,
+                batch_number: batchNumber,
+                odt_data: odtData,
+                line_stop_mesin_data: lineStopMesinData,
+                line_stop_non_mesin_data: finalLineStopNonMesinData,
+                minor_stop_data: minorStopData,
+                minor_stop_count: totalMinorStopCount,
+                actual_output: output,
+                reject: reject,
+                availability_actual: results.availabilityActual,
+                availability_365: results.availability365,
+                performance: results.performance,
+                quality: results.quality,
+                oee_actual: results.oeeActual,
+                oee_365: results.oee365,
+                notes: notes
+            };
+            
+            showLoading('Saving OEE data...');
+            
+            try {
+                const saved = await saveOEERecord(recordData);
+                allOEERecords.unshift(saved);
                 hideLoading();
-                showToast('✅ Data berhasil diupdate!', 'success');
-                closeModal();
-                
-                // Refresh tampilan
-                renderApp();
-                
+                showToast('✅ OEE data saved successfully!', 'success');
+                resetInputForm();
             } catch (error) {
                 hideLoading();
-                showToast(error.message || 'Gagal mengupdate data', 'error');
+                if (error.message !== 'Validation failed') {
+                    showToast('Failed to save OEE data', 'error');
+                }
             }
         }
 
-        // ==================== EXISTING FUNCTIONS (keep as is) ====================
-
-        // [Sisipkan semua fungsi existing yang sudah ada di script lo]
-        // loadMachineData, toggleODT, checkODTExceed, toggleLineStopMesin, etc.
-        // Karena terlalu panjang, saya asumsikan fungsi-fungsi existing tetap sama.
-        // Yang penting adalah fungsi-fungsi baru di atas sudah ditambahkan.
-
-        // ==================== WRAP UP ====================
-
-        function navigateTo(page) {
-            currentPage = page;
+        function resetInputForm() {
+            document.getElementById('input-date').value = new Date().toISOString().split('T')[0];
+            document.getElementById('input-shift').value = '';
+            document.getElementById('input-machine').value = '';
+            document.getElementById('input-pic').value = '';
+            document.getElementById('input-product').value = '';
+            document.getElementById('input-batch').value = '';
+            document.getElementById('input-output').value = '';
+            document.getElementById('input-reject').value = '0';
+            document.getElementById('input-notes').value = '';
             
-            if (currentPage !== 'management') {
-                isManagementUnlocked = false;
+            document.getElementById('odt-section').style.display = 'none';
+            document.getElementById('line-stop-mesin-section').style.display = 'none';
+            document.getElementById('line-stop-non-mesin-section').style.display = 'none';
+            document.getElementById('minor-stop-section').style.display = 'none';
+            document.getElementById('calculated-results').style.display = 'none';
+            document.getElementById('zero-target-info').style.display = 'none';
+            document.getElementById('duration-warning').style.display = 'none';
+            
+            const targetText = document.getElementById('target-text');
+            const targetDetails = document.getElementById('target-details');
+            if (targetText) {
+                targetText.innerHTML = '<span style="color: var(--text-secondary); word-break: break-word;">Select Machine and Shift to see target</span>';
+            }
+            if (targetDetails) {
+                targetDetails.innerHTML = 'Target akan otomatis dihitung berdasarkan available time (shift - ODT - line stops) × target per minute';
             }
             
-            filters.detailLineStopItem = 'all';
-            filters.detailLineStopType = 'all';
-            clickedRecordFilter = null;
+            const containers = [
+                'custom-line-stop-mesin-container',
+                'custom-line-stop-non-mesin-container',
+                'custom-minor-stop-container',
+                'odt-exceed-list'
+            ];
             
-            renderApp();
+            containers.forEach(id => {
+                const container = document.getElementById(id);
+                if (container) container.innerHTML = '';
+            });
+            
+            customLSMCounter = 0;
+            customLSNMCounter = 0;
+            customMSCounter = 0;
+            
+            const outputField = document.getElementById('input-output');
+            const rejectField = document.getElementById('input-reject');
+            if (outputField) {
+                outputField.classList.remove('disabled-for-zero-target');
+                outputField.disabled = false;
+                outputField.placeholder = 'Required if target per minute > 0';
+            }
+            if (rejectField) {
+                rejectField.classList.remove('disabled-for-zero-target');
+                rejectField.disabled = false;
+                rejectField.placeholder = 'Required if target per minute > 0';
+            }
+            
+            currentMachineData = null;
+            currentMachineDetails = null;
+            
+            showToast('Form reset', 'success');
         }
 
         function unlockManagement() {
@@ -3105,51 +3890,309 @@
             }
         }
 
-        function updateFilter(key, value) {
-            filters[key] = value;
-            clickedRecordFilter = null;
-            renderApp();
+        let editingMachineId = null;
+        let machineFormData = {
+            odtItems: [],
+            lsmItems: [],
+            lsnmItems: [],
+            msItems: []
+        };
+
+        function openAddMachineModal() {
+            editingMachineId = null;
+            machineFormData = { odtItems: [], lsmItems: [], lsnmItems: [], msItems: [] };
+            
+            showModal(`
+                <h3 style="font-size: 24px; font-weight: 700; margin-bottom: 24px; word-break: break-word;">➕ Add New Machine</h3>
+                
+                <div style="margin-bottom: 20px;">
+                    <label class="label">Machine Name *</label>
+                    <input type="text" id="modal-machine-name" class="input-field" style="text-transform: uppercase;">
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+                    <div>
+                        <label class="label">Area *</label>
+                        <select id="modal-machine-area" class="input-field">
+                            <option value="">Select Area</option>
+                            <option value="Injeksi">Injeksi</option>
+                            <option value="Non Injeksi">Non Injeksi</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="label">Target per Minute</label>
+                        <input type="number" id="modal-machine-target" min="0" step="0.01" class="input-field" value="0">
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <label class="label">PIC</label>
+                    <input type="text" id="modal-machine-pic" class="input-field" style="text-transform: uppercase;">
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <h4 style="font-weight: 700; margin-bottom: 12px;">ODT Items</h4>
+                    <div id="modal-odt-list" style="max-height: 200px; overflow-y: auto; margin-bottom: 12px;"></div>
+                    <button type="button" class="btn btn-secondary" style="width: 100%;" onclick="addODTItem()">➕ Add ODT</button>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <h4 style="font-weight: 700; margin-bottom: 12px;">Line Stop Mesin Items</h4>
+                    <div id="modal-lsm-list" style="max-height: 200px; overflow-y: auto; margin-bottom: 12px;"></div>
+                    <button type="button" class="btn btn-secondary" style="width: 100%;" onclick="addLSMItem()">🔧 Add Line Stop Mesin</button>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <h4 style="font-weight: 700; margin-bottom: 12px;">Line Stop Non Mesin Items</h4>
+                    <div id="modal-lsnm-list" style="max-height: 200px; overflow-y: auto; margin-bottom: 12px;"></div>
+                    <button type="button" class="btn btn-secondary" style="width: 100%;" onclick="addLSNMItem()">➕ Add Line Stop Non Mesin</button>
+                </div>
+                
+                <div style="margin-bottom: 24px;">
+                    <h4 style="font-weight: 700; margin-bottom: 12px;">Minor Stop Items</h4>
+                    <div id="modal-ms-list" style="max-height: 200px; overflow-y: auto; margin-bottom: 12px;"></div>
+                    <button type="button" class="btn btn-secondary" style="width: 100%;" onclick="addMSItem()">➕ Add Minor Stop</button>
+                </div>
+                
+                <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+                    <button class="btn btn-primary" style="flex: 1; min-width: 120px;" onclick="saveMachineModal()">💾 Save Machine</button>
+                    <button class="btn btn-secondary" style="flex: 1; min-width: 120px;" onclick="closeModal()">Cancel</button>
+                </div>
+            `);
+            
+            renderMachineFormLists();
         }
 
-        function getFilteredRecords() {
-            let records = allOEERecords.filter(r => {
-                if (!r.date) return false;
+        async function editMachine(machineId) {
+            editingMachineId = machineId;
+            const machine = allMachines.find(m => m.id === machineId);
+            
+            showLoading('Loading machine details...');
+            const details = await loadMachineDetails(machineId);
+            hideLoading();
+            
+            machineFormData = {
+                odtItems: details.odt.map(o => ({ name: o.odt_name, time: o.standard_time })),
+                lsmItems: details.lineStopMesin.map(l => l.item_name),
+                lsnmItems: details.lineStopNonMesin.map(l => l.item_name),
+                msItems: details.minorStop.map(m => m.item_name)
+            };
+            
+            showModal(`
+                <h3 style="font-size: 24px; font-weight: 700; margin-bottom: 24px; word-break: break-word;">✏️ Edit Machine</h3>
                 
-                const rDate = new Date(r.date);
-                const sDate = new Date(filters.startDate);
-                const eDate = new Date(filters.endDate);
+                <div style="margin-bottom: 20px;">
+                    <label class="label">Machine Name *</label>
+                    <input type="text" id="modal-machine-name" value="${machine.machine_name}" class="input-field" style="text-transform: uppercase;">
+                </div>
                 
-                const dateMatch = rDate >= sDate && rDate <= eDate;
-                const shiftMatch = filters.shift === 'all' || r.shift === filters.shift;
-                const machineMatch = filters.machine === 'all' || r.machine_name === filters.machine;
-                const picMatch = filters.pic === 'all' || r.pic === filters.pic;
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+                    <div>
+                        <label class="label">Area *</label>
+                        <select id="modal-machine-area" class="input-field">
+                            <option value="">Select Area</option>
+                            <option value="Injeksi" ${machine.area === 'Injeksi' ? 'selected' : ''}>Injeksi</option>
+                            <option value="Non Injeksi" ${machine.area === 'Non Injeksi' ? 'selected' : ''}>Non Injeksi</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="label">Target per Minute</label>
+                        <input type="number" id="modal-machine-target" value="${machine.target_per_minute}" min="0" step="0.01" class="input-field">
+                    </div>
+                </div>
                 
-                return dateMatch && shiftMatch && machineMatch && picMatch;
-            });
+                <div style="margin-bottom: 20px;">
+                    <label class="label">PIC</label>
+                    <input type="text" id="modal-machine-pic" value="${machine.pic || ''}" class="input-field" style="text-transform: uppercase;">
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <h4 style="font-weight: 700; margin-bottom: 12px;">ODT Items</h4>
+                    <div id="modal-odt-list" style="max-height: 200px; overflow-y: auto; margin-bottom: 12px;"></div>
+                    <button type="button" class="btn btn-secondary" style="width: 100%;" onclick="addODTItem()">➕ Add ODT</button>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <h4 style="font-weight: 700; margin-bottom: 12px;">Line Stop Mesin Items</h4>
+                    <div id="modal-lsm-list" style="max-height: 200px; overflow-y: auto; margin-bottom: 12px;"></div>
+                    <button type="button" class="btn btn-secondary" style="width: 100%;" onclick="addLSMItem()">🔧 Add Line Stop Mesin</button>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <h4 style="font-weight: 700; margin-bottom: 12px;">Line Stop Non Mesin Items</h4>
+                    <div id="modal-lsnm-list" style="max-height: 200px; overflow-y: auto; margin-bottom: 12px;"></div>
+                    <button type="button" class="btn btn-secondary" style="width: 100%;" onclick="addLSNMItem()">➕ Add Line Stop Non Mesin</button>
+                </div>
+                
+                <div style="margin-bottom: 24px;">
+                    <h4 style="font-weight: 700; margin-bottom: 12px;">Minor Stop Items</h4>
+                    <div id="modal-ms-list" style="max-height: 200px; overflow-y: auto; margin-bottom: 12px;"></div>
+                    <button type="button" class="btn btn-secondary" style="width: 100%;" onclick="addMSItem()">➕ Add Minor Stop</button>
+                </div>
+                
+                <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+                    <button class="btn btn-primary" style="flex: 1; min-width: 120px;" onclick="saveMachineModal()">💾 Update Machine</button>
+                    <button class="btn btn-secondary" style="flex: 1; min-width: 120px;" onclick="closeModal()">Cancel</button>
+                </div>
+            `);
+            
+            renderMachineFormLists();
+        }
 
-            if (filters.detailLineStopItem !== 'all') {
-                records = records.filter(r => {
-                    let match = false;
-                    
-                    if (filters.detailLineStopType === 'mesin' && r.line_stop_mesin_data) {
-                        try {
-                            const lsData = typeof r.line_stop_mesin_data === 'string' ? JSON.parse(r.line_stop_mesin_data) : r.line_stop_mesin_data;
-                            match = lsData.some(ls => ls.item === filters.detailLineStopItem);
-                        } catch (e) {}
-                    }
-                    
-                    if (filters.detailLineStopType === 'non_mesin' && r.line_stop_non_mesin_data) {
-                        try {
-                            const lsData = typeof r.line_stop_non_mesin_data === 'string' ? JSON.parse(r.line_stop_non_mesin_data) : r.line_stop_non_mesin_data;
-                            match = lsData.some(ls => ls.item === filters.detailLineStopItem);
-                        } catch (e) {}
-                    }
-                    
-                    return match;
-                });
+        function addODTItem() {
+            machineFormData.odtItems.push({ name: '', time: 0 });
+            renderMachineFormLists();
+        }
+
+        function addLSMItem() {
+            machineFormData.lsmItems.push('');
+            renderMachineFormLists();
+        }
+
+        function addLSNMItem() {
+            machineFormData.lsnmItems.push('');
+            renderMachineFormLists();
+        }
+
+        function addMSItem() {
+            machineFormData.msItems.push('');
+            renderMachineFormLists();
+        }
+
+        function removeODTItem(index) {
+            machineFormData.odtItems.splice(index, 1);
+            renderMachineFormLists();
+        }
+
+        function removeLSMItem(index) {
+            machineFormData.lsmItems.splice(index, 1);
+            renderMachineFormLists();
+        }
+
+        function removeLSNMItem(index) {
+            machineFormData.lsnmItems.splice(index, 1);
+            renderMachineFormLists();
+        }
+
+        function removeMSItem(index) {
+            machineFormData.msItems.splice(index, 1);
+            renderMachineFormLists();
+        }
+
+        function renderMachineFormLists() {
+            const odtList = document.getElementById('modal-odt-list');
+            if (odtList) {
+                odtList.innerHTML = machineFormData.odtItems.map((item, i) => `
+                    <div style="display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap;">
+                        <input type="text" value="${item.name}" placeholder="ODT Name" class="input-field" style="flex: 2; min-width: 150px; text-transform: uppercase;" onchange="machineFormData.odtItems[${i}].name = this.value.toUpperCase()">
+                        <input type="number" value="${item.time}" min="0" step="0.1" placeholder="Minutes" class="input-field" style="flex: 1; min-width: 100px;" onchange="machineFormData.odtItems[${i}].time = parseFloat(this.value)">
+                        <button type="button" class="btn btn-danger" style="padding: 10px; min-width: 50px;" onclick="removeODTItem(${i})">✕</button>
+                    </div>
+                `).join('');
             }
             
-            return records;
+            const lsmList = document.getElementById('modal-lsm-list');
+            if (lsmList) {
+                lsmList.innerHTML = machineFormData.lsmItems.map((item, i) => `
+                    <div style="display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap;">
+                        <input type="text" value="${item}" placeholder="Line Stop Mesin Item" class="input-field" style="flex: 1; min-width: 200px; text-transform: uppercase;" onchange="machineFormData.lsmItems[${i}] = this.value.toUpperCase()">
+                        <button type="button" class="btn btn-danger" style="padding: 10px; min-width: 50px;" onclick="removeLSMItem(${i})">✕</button>
+                    </div>
+                `).join('');
+            }
+            
+            const lsnmList = document.getElementById('modal-lsnm-list');
+            if (lsnmList) {
+                lsnmList.innerHTML = machineFormData.lsnmItems.map((item, i) => `
+                    <div style="display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap;">
+                        <input type="text" value="${item}" placeholder="Line Stop Non Mesin Item" class="input-field" style="flex: 1; min-width: 200px; text-transform: uppercase;" onchange="machineFormData.lsnmItems[${i}] = this.value.toUpperCase()">
+                        <button type="button" class="btn btn-danger" style="padding: 10px; min-width: 50px;" onclick="removeLSNMItem(${i})">✕</button>
+                    </div>
+                `).join('');
+            }
+            
+            const msList = document.getElementById('modal-ms-list');
+            if (msList) {
+                msList.innerHTML = machineFormData.msItems.map((item, i) => `
+                    <div style="display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap;">
+                        <input type="text" value="${item}" placeholder="Minor Stop Item" class="input-field" style="flex: 1; min-width: 200px; text-transform: uppercase;" onchange="machineFormData.msItems[${i}] = this.value.toUpperCase()">
+                        <button type="button" class="btn btn-danger" style="padding: 10px; min-width: 50px;" onclick="removeMSItem(${i})">✕</button>
+                    </div>
+                `).join('');
+            }
+        }
+
+        async function saveMachineModal() {
+            const machineName = document.getElementById('modal-machine-name')?.value.toUpperCase() || '';
+            const area = document.getElementById('modal-machine-area')?.value || '';
+            const target = parseFloat(document.getElementById('modal-machine-target')?.value) || 0;
+            const pic = document.getElementById('modal-machine-pic')?.value.toUpperCase() || '';
+            
+            if (!machineName || !area) {
+                showToast('Please fill all required fields', 'error');
+                return;
+            }
+            
+            const machineData = {
+                machine_name: machineName,
+                area: area,
+                target_per_minute: target,
+                pic: pic,
+                is_deleted: false
+            };
+            
+            const odtItems = machineFormData.odtItems.filter(o => o.name && o.time > 0);
+            const lsmItems = machineFormData.lsmItems.filter(l => l);
+            const lsnmItems = machineFormData.lsnmItems.filter(l => l);
+            const msItems = machineFormData.msItems.filter(m => m);
+            
+            showLoading(editingMachineId ? 'Updating machine...' : 'Saving machine...');
+            
+            try {
+                if (editingMachineId) {
+                    await updateMachine(editingMachineId, machineData, odtItems, lsmItems, lsnmItems, msItems);
+                    showToast('Machine updated successfully', 'success');
+                } else {
+                    const saved = await saveMachine(machineData, odtItems, lsmItems, lsnmItems, msItems);
+                    allMachines.push(saved);
+                    showToast('Machine added successfully', 'success');
+                }
+                
+                await loadMachines();
+                hideLoading();
+                closeModal();
+                renderApp();
+            } catch (error) {
+                hideLoading();
+                showToast('Failed to save machine', 'error');
+            }
+        }
+
+        function confirmDeleteMachine(machineId, machineName) {
+            showModal(`
+                <h3 style="font-size: 24px; font-weight: 700; margin-bottom: 16px; color: var(--danger); word-break: break-word;">⚠️ Confirm Delete</h3>
+                <p style="font-size: 16px; margin-bottom: 24px; word-break: break-word;">Are you sure you want to delete machine <strong>"${machineName}"</strong>?</p>
+                <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+                    <button class="btn btn-danger" style="flex: 1; min-width: 120px;" onclick="deleteMachineConfirmed('${machineId}')">Yes, Delete</button>
+                    <button class="btn btn-secondary" style="flex: 1; min-width: 120px;" onclick="closeModal()">Cancel</button>
+                </div>
+            `);
+        }
+
+        async function deleteMachineConfirmed(machineId) {
+            showLoading('Deleting machine...');
+            
+            try {
+                await deleteMachine(machineId);
+                allMachines = allMachines.filter(m => m.id !== machineId);
+                hideLoading();
+                showToast('Machine deleted successfully', 'success');
+                closeModal();
+                renderApp();
+            } catch (error) {
+                hideLoading();
+                showToast('Failed to delete machine', 'error');
+            }
         }
 
         function exportData() {
@@ -3181,7 +4224,7 @@
                 exportToExcel(filtered, startDate, endDate);
             }
         }
-
+        
         function exportToExcel(records, startDate, endDate) {
             try {
                 const delimiter = '\t';
@@ -3272,7 +4315,7 @@
                 showToast('Failed to export data', 'error');
             }
         }
-
+        
         function exportToPDF(records, startDate, endDate) {
             try {
                 const { jsPDF } = window.jspdf;
@@ -3344,13 +4387,70 @@
             }
         }
 
-        // Chart rendering functions (simplified - implement as needed)
-        function renderCharts() {
-            // Implement chart rendering as in original code
-            console.log('Charts rendered');
+        function updateFilter(key, value) {
+            filters[key] = value;
+            // Reset clicked record filter jika user mengubah filter manual
+            clickedRecordFilter = null;
+            renderApp();
         }
 
-        // Initialize app
+        function getFilteredRecords() {
+            let records = allOEERecords.filter(r => {
+                if (!r.date) return false;
+                
+                const rDate = new Date(r.date);
+                const sDate = new Date(filters.startDate);
+                const eDate = new Date(filters.endDate);
+                
+                const dateMatch = rDate >= sDate && rDate <= eDate;
+                const shiftMatch = filters.shift === 'all' || r.shift === filters.shift;
+                const machineMatch = filters.machine === 'all' || r.machine_name === filters.machine;
+                const picMatch = filters.pic === 'all' || r.pic === filters.pic;
+                
+                return dateMatch && shiftMatch && machineMatch && picMatch;
+            });
+
+            if (filters.detailLineStopItem !== 'all') {
+                records = records.filter(r => {
+                    let match = false;
+                    
+                    if (filters.detailLineStopType === 'mesin' && r.line_stop_mesin_data) {
+                        try {
+                            const lsData = typeof r.line_stop_mesin_data === 'string' ? JSON.parse(r.line_stop_mesin_data) : r.line_stop_mesin_data;
+                            match = lsData.some(ls => ls.item === filters.detailLineStopItem);
+                        } catch (e) {}
+                    }
+                    
+                    if (filters.detailLineStopType === 'non_mesin' && r.line_stop_non_mesin_data) {
+                        try {
+                            const lsData = typeof r.line_stop_non_mesin_data === 'string' ? JSON.parse(r.line_stop_non_mesin_data) : r.line_stop_non_mesin_data;
+                            match = lsData.some(ls => ls.item === filters.detailLineStopItem);
+                        } catch (e) {}
+                    }
+                    
+                    return match;
+                });
+            }
+            
+            return records;
+        }
+
+        function navigateTo(page) {
+            currentPage = page;
+            
+            if (currentPage !== 'management') {
+                isManagementUnlocked = false;
+            }
+            
+            filters.detailLineStopItem = 'all';
+            filters.detailLineStopType = 'all';
+            
+            // Reset clicked record filter saat pindah halaman
+            clickedRecordFilter = null;
+            
+            renderApp();
+        }
+
         async function initializeApp() {
             try {
                 initializeTheme();
