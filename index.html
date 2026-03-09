@@ -607,6 +607,18 @@
             color: var(--success);
             margin-right: 4px;
         }
+
+        .edit-mode-badge {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
     </style>
 </head>
 <body class="h-full">
@@ -655,6 +667,10 @@
         let isManagementUnlocked = false;
         let chartInstances = {};
         
+        // Variabel untuk edit mode
+        let editMode = false;
+        let editingRecordId = null;
+        
         const MANAGEMENT_PASSWORD = 'admin123';
         
         const SHIFTS = {
@@ -686,6 +702,13 @@
             pic: 'all',
             detailLineStopItem: 'all',
             detailLineStopType: 'all'
+        };
+
+        // Filter untuk pencarian data di halaman management
+        let managementFilters = {
+            date: '',
+            shift: 'all',
+            machine: 'all'
         };
 
         // Variable untuk menyimpan filter dari OEE history yang diklik
@@ -788,6 +811,34 @@
                 console.error('Error loading OEE records:', error);
                 showToast('Failed to load OEE records', 'error');
                 return [];
+            }
+        }
+
+        async function updateOEERecord(recordId, recordData) {
+            try {
+                const cleanedData = {
+                    ...recordData,
+                    odt_data: JSON.stringify(recordData.odt_data || []),
+                    line_stop_mesin_data: JSON.stringify(recordData.line_stop_mesin_data || []),
+                    line_stop_non_mesin_data: JSON.stringify(recordData.line_stop_non_mesin_data || []),
+                    minor_stop_data: JSON.stringify(recordData.minor_stop_data || [])
+                };
+                
+                const { data, error } = await db
+                    .from('oee_records')
+                    .update(cleanedData)
+                    .eq('id', recordId)
+                    .select()
+                    .single();
+                
+                if (error) {
+                    console.error('Supabase error:', error);
+                    throw error;
+                }
+                return data;
+            } catch (error) {
+                console.error('Error updating OEE record:', error);
+                throw error;
             }
         }
 
@@ -1128,6 +1179,181 @@
             filters.pic = 'all';
             renderApp();
             showToast('Filter direset ke periode bulan berjalan', 'success');
+        }
+
+        // Fungsi untuk mencari data OEE berdasarkan filter di halaman management
+        function searchOEERecords() {
+            const date = document.getElementById('management-search-date')?.value;
+            const shift = document.getElementById('management-search-shift')?.value;
+            const machine = document.getElementById('management-search-machine')?.value;
+            
+            managementFilters = {
+                date: date || '',
+                shift: shift || 'all',
+                machine: machine || 'all'
+            };
+            
+            renderApp();
+        }
+
+        // Fungsi untuk mereset filter pencarian
+        function resetSearchFilters() {
+            managementFilters = {
+                date: '',
+                shift: 'all',
+                machine: 'all'
+            };
+            renderApp();
+        }
+
+        // Fungsi untuk memuat data OEE ke form untuk diedit
+        async function loadOEERecordForEdit(recordId) {
+            const record = allOEERecords.find(r => r.id === recordId);
+            if (!record) {
+                showToast('Record not found', 'error');
+                return;
+            }
+            
+            // Set mode edit
+            editMode = true;
+            editingRecordId = recordId;
+            
+            // Navigate ke halaman input
+            currentPage = 'input';
+            
+            // Render ulang aplikasi
+            renderApp();
+            
+            // Setelah render, isi form dengan data record
+            setTimeout(async () => {
+                // Set basic fields
+                document.getElementById('input-date').value = record.date;
+                document.getElementById('input-shift').value = record.shift;
+                
+                // Trigger change event untuk memuat data machine
+                const machineSelect = document.getElementById('input-machine');
+                machineSelect.value = record.machine_id;
+                
+                // Load machine data dan tunggu selesai
+                await loadMachineData();
+                
+                // Set PIC, Product, Batch
+                document.getElementById('input-pic').value = record.pic || '';
+                document.getElementById('input-product').value = record.product_code || '';
+                document.getElementById('input-batch').value = record.batch_number || '';
+                document.getElementById('input-output').value = record.actual_output || 0;
+                document.getElementById('input-reject').value = record.reject || 0;
+                document.getElementById('input-notes').value = record.notes || '';
+                
+                // Parse JSON data
+                let odtData = [];
+                let lsmData = [];
+                let lsnmData = [];
+                let msData = [];
+                
+                try {
+                    odtData = typeof record.odt_data === 'string' ? JSON.parse(record.odt_data) : (record.odt_data || []);
+                    lsmData = typeof record.line_stop_mesin_data === 'string' ? JSON.parse(record.line_stop_mesin_data) : (record.line_stop_mesin_data || []);
+                    lsnmData = typeof record.line_stop_non_mesin_data === 'string' ? JSON.parse(record.line_stop_non_mesin_data) : (record.line_stop_non_mesin_data || []);
+                    msData = typeof record.minor_stop_data === 'string' ? JSON.parse(record.minor_stop_data) : (record.minor_stop_data || []);
+                } catch (e) {
+                    console.error('Error parsing JSON data:', e);
+                }
+                
+                // Set ODT data
+                if (currentMachineDetails && currentMachineDetails.odt) {
+                    currentMachineDetails.odt.forEach(odt => {
+                        const savedOdt = odtData.find(o => o.name === odt.odt_name);
+                        if (savedOdt && savedOdt.checked) {
+                            const checkbox = document.getElementById(`odt-check-${odt.id}`);
+                            const input = document.getElementById(`odt-time-${odt.id}`);
+                            
+                            if (checkbox && input) {
+                                checkbox.checked = true;
+                                input.disabled = false;
+                                input.value = savedOdt.actualTime;
+                                toggleODT(odt.id);
+                                checkODTExceed(odt.id, odt.standard_time);
+                            }
+                        }
+                    });
+                }
+                
+                // Set Line Stop Mesin data
+                if (currentMachineDetails && currentMachineDetails.lineStopMesin) {
+                    currentMachineDetails.lineStopMesin.forEach(ls => {
+                        const savedLsm = lsmData.find(l => l.item === ls.item_name);
+                        if (savedLsm) {
+                            const checkbox = document.getElementById(`lsm-check-${ls.id}`);
+                            if (checkbox) {
+                                checkbox.checked = true;
+                                toggleLineStopMesin(ls.id);
+                                
+                                const durationInput = document.getElementById(`lsm-duration-${ls.id}`);
+                                const actionInput = document.getElementById(`lsm-action-${ls.id}`);
+                                const wrInput = document.getElementById(`lsm-wr-${ls.id}`);
+                                
+                                if (durationInput) durationInput.value = savedLsm.duration;
+                                if (actionInput) actionInput.value = savedLsm.action || '';
+                                if (wrInput) wrInput.value = savedLsm.wr || '';
+                                
+                                checkLSMDuration(ls.id);
+                            }
+                        }
+                    });
+                }
+                
+                // Set Line Stop Non Mesin data
+                if (currentMachineDetails && currentMachineDetails.lineStopNonMesin) {
+                    currentMachineDetails.lineStopNonMesin.forEach(ls => {
+                        // Filter out ODT exceed items
+                        const savedLsnm = lsnmData.find(l => l.item === ls.item_name && !l.item.startsWith('ODT Exceed'));
+                        if (savedLsnm) {
+                            const checkbox = document.getElementById(`lsnm-check-${ls.id}`);
+                            if (checkbox) {
+                                checkbox.checked = true;
+                                toggleLineStopNonMesin(ls.id);
+                                
+                                const durationInput = document.getElementById(`lsnm-duration-${ls.id}`);
+                                const actionInput = document.getElementById(`lsnm-action-${ls.id}`);
+                                
+                                if (durationInput) durationInput.value = savedLsnm.duration;
+                                if (actionInput) actionInput.value = savedLsnm.action || '';
+                            }
+                        }
+                    });
+                }
+                
+                // Set Minor Stop data
+                if (currentMachineDetails && currentMachineDetails.minorStop) {
+                    currentMachineDetails.minorStop.forEach(ms => {
+                        const savedMs = msData.find(m => m.item === ms.item_name);
+                        if (savedMs) {
+                            const checkbox = document.getElementById(`ms-check-${ms.id}`);
+                            if (checkbox) {
+                                checkbox.checked = true;
+                                toggleMinorStop(ms.id);
+                                
+                                const freqInput = document.getElementById(`ms-frequency-${ms.id}`);
+                                if (freqInput) freqInput.value = savedMs.frequency;
+                            }
+                        }
+                    });
+                }
+                
+                // Update calculations
+                updateCalculations();
+                
+                showToast('Data loaded for editing', 'success');
+            }, 500);
+        }
+
+        // Fungsi untuk membatalkan edit mode
+        function cancelEdit() {
+            editMode = false;
+            editingRecordId = null;
+            resetInputForm();
+            showToast('Edit mode cancelled', 'success');
         }
 
         function renderApp() {
@@ -1823,12 +2049,22 @@
                 `;
             }
             
+            const editModeBadge = editMode ? `
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px; padding: 12px; background: rgba(245, 158, 11, 0.1); border-radius: 8px; border-left: 4px solid #f59e0b;">
+                    <span class="edit-mode-badge">✏️ EDIT MODE</span>
+                    <span style="color: var(--text-primary); font-size: 14px;">Anda sedang mengedit data OEE. Klik "Update Data OEE" untuk menyimpan perubahan.</span>
+                    <button class="btn btn-secondary" style="margin-left: auto; padding: 6px 12px;" onclick="cancelEdit()">Batal</button>
+                </div>
+            ` : '';
+            
             return `
                 <div class="container-main">
                     <div class="card">
                         <div class="card-header">
                             <div class="card-header-left">✏️ Input OEE Data</div>
                         </div>
+                        
+                        ${editModeBadge}
                         
                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-bottom: 24px;">
                             <div>
@@ -1967,7 +2203,10 @@
                         </div>
                         
                         <div style="display: flex; gap: 16px; flex-wrap: wrap;">
-                            <button class="btn btn-primary" onclick="saveOEEData()" style="flex: 1; min-width: 200px;">💾 Simpan Data OEE</button>
+                            ${editMode ? 
+                                `<button class="btn btn-primary" onclick="updateOEEData()" style="flex: 1; min-width: 200px;">🔄 Update Data OEE</button>` : 
+                                `<button class="btn btn-primary" onclick="saveOEEData()" style="flex: 1; min-width: 200px;">💾 Simpan Data OEE</button>`
+                            }
                             <button class="btn btn-secondary" onclick="resetInputForm()" style="flex: 1; min-width: 200px;">🔄 Reset Form</button>
                         </div>
                     </div>
@@ -1984,13 +2223,28 @@
                         <p style="color: var(--text-secondary); margin-bottom: 24px;">Enter password to access machine management</p>
                         <input type="password" id="mgmt-password" class="input-field" placeholder="Enter password" style="margin-bottom: 16px;">
                         <button class="btn btn-primary" style="width: 100%;" onclick="unlockManagement()">🔓 Unlock</button>
-                        <p style="font-size: 12px; color: var(--text-secondary); margin-top: 16px;">Default password hubungi administrator</p>
                     </div>
                 </div>
             `;
         }
 
         function renderManagementPage() {
+            // Filter records berdasarkan managementFilters
+            const filteredRecords = allOEERecords.filter(r => {
+                if (!r.date) return false;
+                
+                const dateMatch = !managementFilters.date || r.date === managementFilters.date;
+                const shiftMatch = managementFilters.shift === 'all' || r.shift === managementFilters.shift;
+                const machineMatch = managementFilters.machine === 'all' || r.machine_name === managementFilters.machine;
+                
+                return dateMatch && shiftMatch && machineMatch;
+            });
+            
+            // Sort by date descending
+            filteredRecords.sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            const uniqueMachines = [...new Set(allOEERecords.map(r => r.machine_name).filter(Boolean))];
+            
             return `
                 <div class="container-main">
                     <div class="card">
@@ -2033,6 +2287,82 @@
                                 <p>Click "Add Machine" to get started</p>
                             </div>
                         `}
+                    </div>
+                    
+                    <div class="card" style="margin-top: 24px;">
+                        <div class="card-header">
+                            <div class="card-header-left">📝 Edit OEE Data</div>
+                        </div>
+                        
+                        <div style="margin-bottom: 24px;">
+                            <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 16px;">
+                                Gunakan filter di bawah untuk mencari data OEE yang ingin diedit. Klik tombol "Edit" pada baris data yang sesuai.
+                            </p>
+                            
+                            <div class="filter-section">
+                                <div>
+                                    <label class="label">Tanggal</label>
+                                    <input type="date" id="management-search-date" value="${managementFilters.date}" class="input-field">
+                                </div>
+                                <div>
+                                    <label class="label">Shift</label>
+                                    <select id="management-search-shift" class="input-field">
+                                        <option value="all">All Shifts</option>
+                                        ${Object.keys(SHIFTS).map(s => `<option value="${s}" ${managementFilters.shift === s ? 'selected' : ''}>${s}</option>`).join('')}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="label">Machine</label>
+                                    <select id="management-search-machine" class="input-field">
+                                        <option value="all">All Machines</option>
+                                        ${uniqueMachines.map(m => `<option value="${m}" ${managementFilters.machine === m ? 'selected' : ''}>${m}</option>`).join('')}
+                                    </select>
+                                </div>
+                                <div style="display: flex; align-items: flex-end; gap: 8px;">
+                                    <button class="btn btn-primary" onclick="searchOEERecords()" style="flex: 1;">🔍 Search</button>
+                                    <button class="btn btn-secondary" onclick="resetSearchFilters()" style="flex: 1;">Reset</button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="table-wrapper">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th class="nowrap">Date</th>
+                                        <th class="nowrap">Shift</th>
+                                        <th class="nowrap">Machine</th>
+                                        <th class="nowrap">PIC</th>
+                                        <th class="nowrap">Batch</th>
+                                        <th class="nowrap">Output</th>
+                                        <th class="nowrap">OEE Actual</th>
+                                        <th class="nowrap">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${filteredRecords.length > 0 ? filteredRecords.map(r => `
+                                        <tr>
+                                            <td class="wrap-text">${r.date ? new Date(r.date).toLocaleDateString('id-ID') : '-'}</td>
+                                            <td class="wrap-text">${r.shift || '-'}</td>
+                                            <td class="wrap-text"><strong>${r.machine_name || '-'}</strong></td>
+                                            <td class="wrap-text">${r.pic || '-'}</td>
+                                            <td class="wrap-text">${r.batch_number || '-'}</td>
+                                            <td class="wrap-text">${(r.actual_output || 0).toLocaleString('id-ID')}</td>
+                                            <td class="wrap-text ${(r.oee_actual || 0) >= 88 ? 'status-good' : 'status-bad'}">${(r.oee_actual || 0).toFixed(1)}%</td>
+                                            <td class="wrap-text">
+                                                <button class="btn btn-secondary" style="padding: 6px 12px;" onclick="loadOEERecordForEdit('${r.id}')">✏️ Edit</button>
+                                            </td>
+                                        </tr>
+                                    `).join('') : `
+                                        <tr>
+                                            <td colspan="8" style="text-align: center; color: var(--text-secondary); padding: 40px;">
+                                                Tidak ada data OEE yang ditemukan dengan filter tersebut
+                                            </td>
+                                        </tr>
+                                    `}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             `;
@@ -3816,6 +4146,250 @@
             }
         }
 
+        async function updateOEEData() {
+            if (!editingRecordId) {
+                showToast('No record being edited', 'error');
+                return;
+            }
+            
+            const date = document.getElementById('input-date')?.value;
+            const shift = document.getElementById('input-shift')?.value;
+            const machineId = document.getElementById('input-machine')?.value;
+            const pic = document.getElementById('input-pic')?.value.toUpperCase() || '';
+            const productCode = document.getElementById('input-product')?.value.toUpperCase() || '';
+            const batchNumber = document.getElementById('input-batch')?.value.toUpperCase() || '';
+            const output = parseFloat(document.getElementById('input-output')?.value) || 0;
+            const reject = parseFloat(document.getElementById('input-reject')?.value) || 0;
+            const notes = document.getElementById('input-notes')?.value || '';
+            
+            if (!date || !shift || !machineId || !pic || !productCode || !batchNumber) {
+                showToast('Please fill all required fields', 'error');
+                return;
+            }
+            
+            if (currentMachineData && currentMachineData.target_per_minute > 0 && output === 0) {
+                showToast('Actual Output is required for machines with target per minute > 0', 'error');
+                return;
+            }
+            
+            if (!currentMachineData) {
+                showToast('Please select a machine', 'error');
+                return;
+            }
+            
+            const odtData = [];
+            if (currentMachineDetails && currentMachineDetails.odt) {
+                currentMachineDetails.odt.forEach(odt => {
+                    const checkbox = document.getElementById(`odt-check-${odt.id}`);
+                    if (!checkbox) return;
+                    
+                    const checked = checkbox.checked;
+                    const input = document.getElementById(`odt-time-${odt.id}`);
+                    const actualTime = input?.value || 0;
+                    odtData.push({
+                        name: odt.odt_name,
+                        standardTime: odt.standard_time,
+                        actualTime: actualTime,
+                        checked: checked
+                    });
+                });
+            }
+            
+            const lineStopMesinData = [];
+            if (currentMachineDetails && currentMachineDetails.lineStopMesin) {
+                currentMachineDetails.lineStopMesin.forEach(ls => {
+                    const checkbox = document.getElementById(`lsm-check-${ls.id}`);
+                    if (!checkbox || !checkbox.checked) return;
+                    
+                    const duration = parseFloat(document.getElementById(`lsm-duration-${ls.id}`)?.value) || 0;
+                    const action = document.getElementById(`lsm-action-${ls.id}`)?.value || '';
+                    const wr = document.getElementById(`lsm-wr-${ls.id}`)?.value || '';
+                    
+                    if (duration >= 180 && (!action || !wr)) {
+                        showToast(`Line Stop Mesin "${ls.item_name}": Action and WR required for duration ≥ 180 min`, 'error');
+                        throw new Error('Validation failed');
+                    }
+                    
+                    lineStopMesinData.push({
+                        item: ls.item_name,
+                        duration: duration,
+                        action: action,
+                        wr: wr
+                    });
+                });
+            }
+            
+            for (let i = 1; i <= customLSMCounter; i++) {
+                const itemEl = document.getElementById(`custom-lsm-item-${i}`);
+                if (itemEl && itemEl.value) {
+                    const item = itemEl.value;
+                    const duration = parseFloat(document.getElementById(`custom-lsm-duration-${i}`)?.value) || 0;
+                    const action = document.getElementById(`custom-lsm-action-${i}`)?.value || '';
+                    const wr = document.getElementById(`custom-lsm-wr-${i}`)?.value || '';
+                    
+                    if (!duration) {
+                        showToast(`Custom Line Stop Mesin "${item}": Duration is required`, 'error');
+                        throw new Error('Validation failed');
+                    }
+                    
+                    if (duration >= 180 && (!action || !wr)) {
+                        showToast(`Custom Line Stop Mesin "${item}": Action and WR required for duration ≥ 180 min`, 'error');
+                        throw new Error('Validation failed');
+                    }
+                    
+                    lineStopMesinData.push({ item, duration, action, wr });
+                }
+            }
+            
+            const lineStopNonMesinData = [];
+            if (currentMachineDetails && currentMachineDetails.lineStopNonMesin) {
+                currentMachineDetails.lineStopNonMesin.forEach(ls => {
+                    const checkbox = document.getElementById(`lsnm-check-${ls.id}`);
+                    if (!checkbox || !checkbox.checked) return;
+                    
+                    const duration = parseFloat(document.getElementById(`lsnm-duration-${ls.id}`)?.value) || 0;
+                    const action = document.getElementById(`lsnm-action-${ls.id}`)?.value || '';
+                    
+                    if (!action) {
+                        showToast(`Line Stop Non Mesin "${ls.item_name}": Action is required`, 'error');
+                        throw new Error('Validation failed');
+                    }
+                    
+                    lineStopNonMesinData.push({
+                        item: ls.item_name,
+                        duration: duration,
+                        action: action
+                    });
+                });
+            }
+            
+            for (let i = 1; i <= customLSNMCounter; i++) {
+                const itemEl = document.getElementById(`custom-lsnm-item-${i}`);
+                if (itemEl && itemEl.value) {
+                    const item = itemEl.value;
+                    const duration = parseFloat(document.getElementById(`custom-lsnm-duration-${i}`)?.value) || 0;
+                    const action = document.getElementById(`custom-lsnm-action-${i}`)?.value || '';
+                    
+                    if (!duration || !action) {
+                        showToast(`Custom Line Stop Non Mesin "${item}": Duration and Action are required`, 'error');
+                        throw new Error('Validation failed');
+                    }
+                    
+                    lineStopNonMesinData.push({ item, duration, action });
+                }
+            }
+            
+            const minorStopData = [];
+            let totalMinorStopCount = 0;
+            
+            if (currentMachineDetails && currentMachineDetails.minorStop) {
+                currentMachineDetails.minorStop.forEach(ms => {
+                    const checkbox = document.getElementById(`ms-check-${ms.id}`);
+                    if (!checkbox || !checkbox.checked) return;
+                    
+                    const frequency = parseFloat(document.getElementById(`ms-frequency-${ms.id}`)?.value) || 0;
+                    
+                    if (frequency > 0) {
+                        minorStopData.push({
+                            item: ms.item_name,
+                            frequency: frequency
+                        });
+                        totalMinorStopCount += frequency;
+                    }
+                });
+            }
+            
+            for (let i = 1; i <= customMSCounter; i++) {
+                const itemEl = document.getElementById(`custom-ms-item-${i}`);
+                if (itemEl && itemEl.value) {
+                    const item = itemEl.value;
+                    const frequency = parseFloat(document.getElementById(`custom-ms-frequency-${i}`)?.value) || 0;
+                    
+                    if (!frequency) {
+                        showToast(`Custom Minor Stop "${item}": Frequency is required`, 'error');
+                        throw new Error('Validation failed');
+                    }
+                    
+                    minorStopData.push({ item, frequency });
+                    totalMinorStopCount += frequency;
+                }
+            }
+            
+            const formData = {
+                shift: shift,
+                targetPerMinute: currentMachineData.target_per_minute,
+                actualOutput: output,
+                reject: reject,
+                odtData: odtData,
+                lineStopMesinData: lineStopMesinData,
+                lineStopNonMesinData: lineStopNonMesinData
+            };
+            
+            // Validasi total durasi tidak melebihi jam kerja
+            const totalDuration = calculateTotalDuration(formData);
+            const shiftMinutes = SHIFTS[shift]?.minutes || 0;
+            
+            if (totalDuration > shiftMinutes) {
+                showToast('Durasi kegiatan melebihi jam kerja, cek kembali data availability anda.', 'error');
+                return;
+            }
+            
+            const results = calculateOEE(formData);
+            
+            const finalLineStopNonMesinData = [...lineStopNonMesinData, ...results.odtExceeds];
+            
+            const recordData = {
+                date: date,
+                shift: shift,
+                shift_minutes: SHIFTS[shift].minutes,
+                machine_name: currentMachineData.machine_name,
+                machine_id: machineId,
+                pic: pic,
+                product_code: productCode,
+                batch_number: batchNumber,
+                odt_data: odtData,
+                line_stop_mesin_data: lineStopMesinData,
+                line_stop_non_mesin_data: finalLineStopNonMesinData,
+                minor_stop_data: minorStopData,
+                minor_stop_count: totalMinorStopCount,
+                actual_output: output,
+                reject: reject,
+                availability_actual: results.availabilityActual,
+                availability_365: results.availability365,
+                performance: results.performance,
+                quality: results.quality,
+                oee_actual: results.oeeActual,
+                oee_365: results.oee365,
+                notes: notes
+            };
+            
+            showLoading('Updating OEE data...');
+            
+            try {
+                const updated = await updateOEERecord(editingRecordId, recordData);
+                
+                // Update record di array local
+                const index = allOEERecords.findIndex(r => r.id === editingRecordId);
+                if (index !== -1) {
+                    allOEERecords[index] = updated;
+                }
+                
+                hideLoading();
+                showToast('✅ OEE data updated successfully!', 'success');
+                
+                // Reset edit mode
+                editMode = false;
+                editingRecordId = null;
+                
+                resetInputForm();
+            } catch (error) {
+                hideLoading();
+                if (error.message !== 'Validation failed') {
+                    showToast('Failed to update OEE data', 'error');
+                }
+            }
+        }
+
         function resetInputForm() {
             document.getElementById('input-date').value = new Date().toISOString().split('T')[0];
             document.getElementById('input-shift').value = '';
@@ -3875,6 +4449,12 @@
             
             currentMachineData = null;
             currentMachineDetails = null;
+            
+            // Reset edit mode jika diperlukan
+            if (editMode) {
+                editMode = false;
+                editingRecordId = null;
+            }
             
             showToast('Form reset', 'success');
         }
@@ -4448,6 +5028,12 @@
             // Reset clicked record filter saat pindah halaman
             clickedRecordFilter = null;
             
+            // Reset edit mode jika pindah halaman
+            if (editMode) {
+                editMode = false;
+                editingRecordId = null;
+            }
+            
             renderApp();
         }
 
@@ -4470,7 +5056,7 @@
                     if (currentPage === 'dashboard') {
                         renderCharts();
                     }
-                }, 3600000);
+                }, 3600000); // 1 jam
                 
             } catch (error) {
                 console.error('Initialization error:', error);
