@@ -1421,8 +1421,8 @@
             const avgOEE365 = filtered.length > 0 ? filtered.reduce((sum, r) => sum + (r.oee_365 || 0), 0) / filtered.length : 0;
             const totalOutput = filtered.reduce((sum, r) => sum + (r.actual_output || 0), 0);
             
-            const uniquePICs = [...new Set(allOEERecords.map(r => r.pic).filter(Boolean))];
-            const uniqueMachines = [...new Set(allOEERecords.map(r => r.machine_name).filter(Boolean))];
+            const uniquePICs = [...new Set(filtered.map(r => r.pic).filter(Boolean))];
+            const uniqueMachines = [...new Set(filtered.map(r => r.machine_name).filter(Boolean))];
             
             const startDateDisplay = new Date(filters.startDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'long' });
             const endDateDisplay = new Date(filters.endDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -2400,25 +2400,6 @@
             `;
         }
 
-        function wrapText(ctx, text, maxWidth) {
-            const words = text.split(' ');
-            const lines = [];
-            let currentLine = words[0];
-
-            for (let i = 1; i < words.length; i++) {
-                const word = words[i];
-                const width = ctx.measureText(currentLine + ' ' + word).width;
-                if (width < maxWidth) {
-                    currentLine += ' ' + word;
-                } else {
-                    lines.push(currentLine);
-                    currentLine = word;
-                }
-            }
-            lines.push(currentLine);
-            return lines;
-        }
-
         function renderCharts() {
             const filtered = getFilteredRecords();
             
@@ -2431,7 +2412,7 @@
             });
             chartInstances = {};
             
-            renderTrendChart(); // Tidak menggunakan filtered
+            renderTrendChart(filtered);
             renderPerMachineChart(filtered);
             renderAPQChart(filtered);
             renderODTChart(filtered);
@@ -2440,19 +2421,12 @@
             renderMinorStopChart(filtered);
         }
 
-        function renderTrendChart() {
+        function renderTrendChart(filtered) {
             const ctx = document.getElementById('chart-trend');
             if (!ctx) return;
             
             try {
-                // Gunakan SEMUA data, tidak terpengaruh filter
-                const currentYear = new Date().getFullYear();
-                const recordsThisYear = allOEERecords.filter(r => {
-                    const recordYear = new Date(r.date).getFullYear();
-                    return recordYear === currentYear;
-                });
-
-                // Kelompokkan data per bulan
+                // Gunakan data terfilter, kelompokkan per bulan
                 const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
                 const monthlyData = {};
                 
@@ -2461,8 +2435,9 @@
                     monthlyData[i] = [];
                 }
 
-                // Kelompokkan OEE per bulan
-                recordsThisYear.forEach(r => {
+                // Kelompokkan OEE per bulan dari data terfilter
+                filtered.forEach(r => {
+                    if (!r.date) return;
                     const month = new Date(r.date).getMonth(); // 0-11
                     monthlyData[month].push(r.oee_actual || 0);
                 });
@@ -2526,7 +2501,7 @@
                                 callbacks: {
                                     title: function(context) {
                                         const monthIndex = context[0].dataIndex;
-                                        return `${monthNames[monthIndex]} ${currentYear}`;
+                                        return `${monthNames[monthIndex]} ${new Date().getFullYear()}`;
                                     },
                                     label: function(context) {
                                         const value = context.raw;
