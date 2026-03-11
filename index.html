@@ -1525,7 +1525,7 @@
                     <div class="grid-2">
                         <div class="card">
                             <div class="card-header">
-                                <div class="card-header-left">📈 AVG OEE per Bulan</div>
+                                <div class="card-header-left">📈 AVG OEE per Bulan (Tahun Berjalan)</div>
                             </div>
                             <div class="chart-container">
                                 <canvas id="chart-trend"></canvas>
@@ -2412,7 +2412,7 @@
             });
             chartInstances = {};
             
-            renderTrendChart(filtered);
+            renderTrendChart(); // TIDAK menggunakan filtered, tapi menggunakan filters untuk machine/shift/pic
             renderPerMachineChart(filtered);
             renderAPQChart(filtered);
             renderODTChart(filtered);
@@ -2421,13 +2421,34 @@
             renderMinorStopChart(filtered);
         }
 
-        function renderTrendChart(filtered) {
+        function renderTrendChart() {
             const ctx = document.getElementById('chart-trend');
             if (!ctx) return;
             
             try {
-                // Gunakan data terfilter, kelompokkan per bulan
+                const currentYear = new Date().getFullYear();
                 const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+                
+                // Ambil data dari allOEERecords (semua data) dengan filter:
+                // 1. Tahun = currentYear
+                // 2. Shift = filter shift (jika tidak 'all')
+                // 3. Machine = filter machine (jika tidak 'all')
+                // 4. PIC = filter pic (jika tidak 'all')
+                // IGNORE filter tanggal!
+                const yearData = allOEERecords.filter(r => {
+                    if (!r.date) return false;
+                    
+                    const recordYear = new Date(r.date).getFullYear();
+                    const yearMatch = recordYear === currentYear;
+                    
+                    const shiftMatch = filters.shift === 'all' || r.shift === filters.shift;
+                    const machineMatch = filters.machine === 'all' || r.machine_name === filters.machine;
+                    const picMatch = filters.pic === 'all' || r.pic === filters.pic;
+                    
+                    return yearMatch && shiftMatch && machineMatch && picMatch;
+                });
+
+                // Kelompokkan data per bulan
                 const monthlyData = {};
                 
                 // Inisialisasi semua bulan dengan array kosong
@@ -2435,9 +2456,8 @@
                     monthlyData[i] = [];
                 }
 
-                // Kelompokkan OEE per bulan dari data terfilter
-                filtered.forEach(r => {
-                    if (!r.date) return;
+                // Kelompokkan OEE per bulan
+                yearData.forEach(r => {
                     const month = new Date(r.date).getMonth(); // 0-11
                     monthlyData[month].push(r.oee_actual || 0);
                 });
@@ -2472,7 +2492,7 @@
                     data: {
                         labels: months,
                         datasets: [{
-                            label: 'Rata-rata OEE per Bulan',
+                            label: `Rata-rata OEE ${currentYear}`,
                             data: monthlyAvg,
                             borderColor: '#667eea',
                             backgroundColor: 'rgba(102, 125, 234, 0.1)',
@@ -2501,13 +2521,27 @@
                                 callbacks: {
                                     title: function(context) {
                                         const monthIndex = context[0].dataIndex;
-                                        return `${monthNames[monthIndex]} ${new Date().getFullYear()}`;
+                                        return `${monthNames[monthIndex]} ${currentYear}`;
                                     },
                                     label: function(context) {
                                         const value = context.raw;
                                         if (value === null) return 'Tidak ada data';
                                         return `Rata-rata OEE: ${value.toFixed(1)}%`;
                                     }
+                                }
+                            },
+                            datalabels: {
+                                display: true,
+                                align: 'top',
+                                offset: 10,
+                                color: '#ffffff',
+                                font: {
+                                    weight: 'bold',
+                                    size: 11
+                                },
+                                formatter: function(value) {
+                                    if (value === null) return '';
+                                    return value.toFixed(1) + '%';
                                 }
                             }
                         },
@@ -2527,7 +2561,36 @@
                                 }
                             }
                         }
-                    }
+                    },
+                    plugins: [{
+                        id: 'datalabels',
+                        afterDatasetsDraw: function(chart) {
+                            const ctx = chart.ctx;
+                            const dataset = chart.data.datasets[0];
+                            
+                            ctx.save();
+                            ctx.font = 'bold 11px Arial';
+                            ctx.textAlign = 'center';
+                            ctx.textBaseline = 'bottom';
+                            
+                            dataset.data.forEach((value, index) => {
+                                if (value !== null) {
+                                    const meta = chart.getDatasetMeta(0);
+                                    const point = meta.data[index];
+                                    
+                                    if (point) {
+                                        const x = point.x;
+                                        const y = point.y - 10;
+                                        
+                                        ctx.fillStyle = '#333333';
+                                        ctx.fillText(value.toFixed(1) + '%', x, y);
+                                    }
+                                }
+                            });
+                            
+                            ctx.restore();
+                        }
+                    }]
                 });
             } catch (e) {
                 console.error('Error rendering trend chart:', e);
@@ -2628,7 +2691,7 @@
                     plugins: [{
                         id: 'datalabels',
                         afterDatasetsDraw: function(chart) {
-                            const { ctx, data, chartArea } = chart;
+                            const { ctx, data } = chart;
                             ctx.save();
                             
                             data.datasets[0].data.forEach((value, index) => {
