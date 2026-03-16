@@ -676,6 +676,15 @@
             padding: 4px 12px;
             border-radius: 20px;
         }
+
+        /* Style untuk bar chart yang bisa diklik */
+        .clickable-bar {
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .clickable-bar:hover {
+            opacity: 0.8;
+        }
     </style>
 </head>
 <body class="h-full">
@@ -771,6 +780,10 @@
         // Variable untuk menyimpan filter dari OEE history yang diklik
         let clickedRecordFilter = null;
 
+        // Data untuk chart yang bisa diklik
+        let chartDataLSM = [];
+        let chartDataLSNM = [];
+
         function showToast(message, type = 'success') {
             const toast = document.createElement('div');
             toast.className = `toast ${type}`;
@@ -812,6 +825,22 @@
         function closeModal() {
             const modal = document.getElementById('modal');
             if (modal) modal.remove();
+        }
+
+        // Fungsi aman untuk parse JSON
+        function safeJSONParse(str, defaultValue = []) {
+            if (!str) return defaultValue;
+            try {
+                if (typeof str === 'string') {
+                    // Cek apakah string kosong atau hanya whitespace
+                    if (!str.trim()) return defaultValue;
+                    return JSON.parse(str);
+                }
+                return str || defaultValue;
+            } catch (e) {
+                console.error('Error parsing JSON:', e);
+                return defaultValue;
+            }
         }
 
         async function loadMachines() {
@@ -1302,20 +1331,11 @@
                 document.getElementById('input-reject').value = record.reject || 0;
                 document.getElementById('input-notes').value = record.notes || '';
                 
-                // Parse JSON data
-                let odtData = [];
-                let lsmData = [];
-                let lsnmData = [];
-                let msData = [];
-                
-                try {
-                    odtData = typeof record.odt_data === 'string' ? JSON.parse(record.odt_data) : (record.odt_data || []);
-                    lsmData = typeof record.line_stop_mesin_data === 'string' ? JSON.parse(record.line_stop_mesin_data) : (record.line_stop_mesin_data || []);
-                    lsnmData = typeof record.line_stop_non_mesin_data === 'string' ? JSON.parse(record.line_stop_non_mesin_data) : (record.line_stop_non_mesin_data || []);
-                    msData = typeof record.minor_stop_data === 'string' ? JSON.parse(record.minor_stop_data) : (record.minor_stop_data || []);
-                } catch (e) {
-                    console.error('Error parsing JSON data:', e);
-                }
+                // Parse JSON data dengan safeJSONParse
+                let odtData = safeJSONParse(record.odt_data, []);
+                let lsmData = safeJSONParse(record.line_stop_mesin_data, []);
+                let lsnmData = safeJSONParse(record.line_stop_non_mesin_data, []);
+                let msData = safeJSONParse(record.minor_stop_data, []);
                 
                 // Set ODT data
                 if (currentMachineDetails && currentMachineDetails.odt) {
@@ -1415,27 +1435,11 @@
 
         // Fungsi untuk menampilkan popup detail record
         function showRecordDetail(record) {
-            // Parse JSON data dengan lebih hati-hati
-            let odtData = [];
-            let lsmData = [];
-            let lsnmData = [];
-            let msData = [];
-            
-            try {
-                odtData = typeof record.odt_data === 'string' ? JSON.parse(record.odt_data) : (record.odt_data || []);
-                lsmData = typeof record.line_stop_mesin_data === 'string' ? JSON.parse(record.line_stop_mesin_data) : (record.line_stop_mesin_data || []);
-                lsnmData = typeof record.line_stop_non_mesin_data === 'string' ? JSON.parse(record.line_stop_non_mesin_data) : (record.line_stop_non_mesin_data || []);
-                msData = typeof record.minor_stop_data === 'string' ? JSON.parse(record.minor_stop_data) : (record.minor_stop_data || []);
-                
-                // Debugging: console.log untuk melihat data
-                console.log('ODT Data:', odtData);
-                console.log('LSM Data:', lsmData);
-                console.log('LSNM Data:', lsnmData);
-                console.log('MS Data:', msData);
-                
-            } catch (e) {
-                console.error('Error parsing JSON data:', e);
-            }
+            // Parse JSON data dengan safeJSONParse
+            let odtData = safeJSONParse(record.odt_data, []);
+            let lsmData = safeJSONParse(record.line_stop_mesin_data, []);
+            let lsnmData = safeJSONParse(record.line_stop_non_mesin_data, []);
+            let msData = safeJSONParse(record.minor_stop_data, []);
             
             // Hitung total ODT
             let totalODT = 0;
@@ -1929,16 +1933,14 @@
             let total = 0;
             records.forEach(r => {
                 try {
-                    if (r.odt_data) {
-                        const odtData = typeof r.odt_data === 'string' ? JSON.parse(r.odt_data) : (r.odt_data || []);
-                        odtData.forEach(odt => {
-                            if (odt.checked) {
-                                const actualTime = parseFloat(odt.actualTime || 0);
-                                const standardTime = parseFloat(odt.standardTime || 0);
-                                total += Math.min(actualTime, standardTime);
-                            }
-                        });
-                    }
+                    const odtData = safeJSONParse(r.odt_data, []);
+                    odtData.forEach(odt => {
+                        if (odt.checked) {
+                            const actualTime = parseFloat(odt.actualTime || 0);
+                            const standardTime = parseFloat(odt.standardTime || 0);
+                            total += Math.min(actualTime, standardTime);
+                        }
+                    });
                 } catch (e) {
                     console.error('Error calculating ODT total:', e);
                 }
@@ -1950,12 +1952,10 @@
             let total = 0;
             records.forEach(r => {
                 try {
-                    if (r.line_stop_mesin_data) {
-                        const lsData = typeof r.line_stop_mesin_data === 'string' ? JSON.parse(r.line_stop_mesin_data) : (r.line_stop_mesin_data || []);
-                        lsData.forEach(ls => {
-                            total += parseFloat(ls.duration || 0);
-                        });
-                    }
+                    const lsData = safeJSONParse(r.line_stop_mesin_data, []);
+                    lsData.forEach(ls => {
+                        total += parseFloat(ls.duration || 0);
+                    });
                 } catch (e) {
                     console.error('Error calculating LSM total:', e);
                 }
@@ -1967,12 +1967,10 @@
             let total = 0;
             records.forEach(r => {
                 try {
-                    if (r.line_stop_non_mesin_data) {
-                        const lsData = typeof r.line_stop_non_mesin_data === 'string' ? JSON.parse(r.line_stop_non_mesin_data) : (r.line_stop_non_mesin_data || []);
-                        lsData.forEach(ls => {
-                            total += parseFloat(ls.duration || 0);
-                        });
-                    }
+                    const lsData = safeJSONParse(r.line_stop_non_mesin_data, []);
+                    lsData.forEach(ls => {
+                        total += parseFloat(ls.duration || 0);
+                    });
                 } catch (e) {
                     console.error('Error calculating LSNM total:', e);
                 }
@@ -1984,12 +1982,10 @@
             let total = 0;
             records.forEach(r => {
                 try {
-                    if (r.minor_stop_data) {
-                        const msData = typeof r.minor_stop_data === 'string' ? JSON.parse(r.minor_stop_data) : (r.minor_stop_data || []);
-                        msData.forEach(ms => {
-                            total += parseFloat(ms.frequency || 0);
-                        });
-                    }
+                    const msData = safeJSONParse(r.minor_stop_data, []);
+                    msData.forEach(ms => {
+                        total += parseFloat(ms.frequency || 0);
+                    });
                 } catch (e) {
                     console.error('Error calculating minor stop total:', e);
                 }
@@ -2020,7 +2016,7 @@
                 
                 let totalODT = 0;
                 try {
-                    const odtData = typeof r.odt_data === 'string' ? JSON.parse(r.odt_data) : (r.odt_data || []);
+                    const odtData = safeJSONParse(r.odt_data, []);
                     odtData.forEach(odt => {
                         if (odt.checked) {
                             const actualTime = parseFloat(odt.actualTime || 0);
@@ -2034,7 +2030,7 @@
                 
                 let totalLSM = 0;
                 try {
-                    const lsmData = typeof r.line_stop_mesin_data === 'string' ? JSON.parse(r.line_stop_mesin_data) : (r.line_stop_mesin_data || []);
+                    const lsmData = safeJSONParse(r.line_stop_mesin_data, []);
                     lsmData.forEach(ls => {
                         totalLSM += parseFloat(ls.duration || 0);
                     });
@@ -2044,7 +2040,7 @@
                 
                 let totalLSNM = 0;
                 try {
-                    const lsnmData = typeof r.line_stop_non_mesin_data === 'string' ? JSON.parse(r.line_stop_non_mesin_data) : (r.line_stop_non_mesin_data || []);
+                    const lsnmData = safeJSONParse(r.line_stop_non_mesin_data, []);
                     lsnmData.forEach(ls => {
                         totalLSNM += parseFloat(ls.duration || 0);
                     });
@@ -2507,7 +2503,7 @@
             });
             chartInstances = {};
             
-            renderTrendChart(); // TIDAK menggunakan filtered, tapi menggunakan filters untuk machine/shift/pic
+            renderTrendChart();
             renderPerMachineChart(filtered);
             renderAPQChart(filtered);
             renderODTChart(filtered);
@@ -2897,19 +2893,17 @@
                 const odtStats = {};
                 records.forEach(r => {
                     try {
-                        if (r.odt_data) {
-                            const odtData = typeof r.odt_data === 'string' ? JSON.parse(r.odt_data) : (r.odt_data || []);
-                            odtData.forEach(odt => {
-                                if (odt.checked) {
-                                    const actualTime = parseFloat(odt.actualTime || 0);
-                                    const standardTime = parseFloat(odt.standardTime || 0);
-                                    const time = Math.min(actualTime, standardTime);
-                                    if (odt.name) {
-                                        odtStats[odt.name] = (odtStats[odt.name] || 0) + time;
-                                    }
+                        const odtData = safeJSONParse(r.odt_data, []);
+                        odtData.forEach(odt => {
+                            if (odt.checked) {
+                                const actualTime = parseFloat(odt.actualTime || 0);
+                                const standardTime = parseFloat(odt.standardTime || 0);
+                                const time = Math.min(actualTime, standardTime);
+                                if (odt.name) {
+                                    odtStats[odt.name] = (odtStats[odt.name] || 0) + time;
                                 }
-                            });
-                        }
+                            }
+                        });
                     } catch (e) {
                         console.error('Error parsing ODT data for chart:', e);
                     }
@@ -3052,15 +3046,13 @@
                 const lsStats = {};
                 records.forEach(r => {
                     try {
-                        if (r.line_stop_mesin_data) {
-                            const lsData = typeof r.line_stop_mesin_data === 'string' ? JSON.parse(r.line_stop_mesin_data) : (r.line_stop_mesin_data || []);
-                            lsData.forEach(ls => {
-                                const duration = parseFloat(ls.duration || 0);
-                                if (ls.item) {
-                                    lsStats[ls.item] = (lsStats[ls.item] || 0) + duration;
-                                }
-                            });
-                        }
+                        const lsData = safeJSONParse(r.line_stop_mesin_data, []);
+                        lsData.forEach(ls => {
+                            const duration = parseFloat(ls.duration || 0);
+                            if (ls.item) {
+                                lsStats[ls.item] = (lsStats[ls.item] || 0) + duration;
+                            }
+                        });
                     } catch (e) {
                         console.error('Error parsing LSM data for chart:', e);
                     }
@@ -3069,6 +3061,8 @@
                 const sorted = Object.entries(lsStats)
                     .sort((a, b) => b[1] - a[1])
                     .slice(0, 10);
+                
+                chartDataLSM = sorted.map(s => ({ name: s[0], value: s[1] }));
                 
                 if (sorted.length === 0) return;
                 
@@ -3159,6 +3153,14 @@
                                 top: 20,
                                 bottom: 20
                             }
+                        },
+                        onClick: function(e, activeElements) {
+                            if (activeElements && activeElements.length > 0) {
+                                const index = activeElements[0].index;
+                                if (chartDataLSM[index]) {
+                                    setDetailFilter(chartDataLSM[index].name, 'mesin');
+                                }
+                            }
                         }
                     },
                     plugins: [{
@@ -3203,16 +3205,13 @@
                 const lsStats = {};
                 records.forEach(r => {
                     try {
-                        // Hanya baca dari line_stop_non_mesin_data - tidak perlu baca dari ODT
-                        if (r.line_stop_non_mesin_data) {
-                            const lsData = typeof r.line_stop_non_mesin_data === 'string' ? JSON.parse(r.line_stop_non_mesin_data) : (r.line_stop_non_mesin_data || []);
-                            lsData.forEach(ls => {
-                                const duration = parseFloat(ls.duration || 0);
-                                if (ls.item) {
-                                    lsStats[ls.item] = (lsStats[ls.item] || 0) + duration;
-                                }
-                            });
-                        }
+                        const lsData = safeJSONParse(r.line_stop_non_mesin_data, []);
+                        lsData.forEach(ls => {
+                            const duration = parseFloat(ls.duration || 0);
+                            if (ls.item) {
+                                lsStats[ls.item] = (lsStats[ls.item] || 0) + duration;
+                            }
+                        });
                     } catch (e) {
                         console.error('Error parsing LSNM data for chart:', e);
                     }
@@ -3221,6 +3220,8 @@
                 const sorted = Object.entries(lsStats)
                     .sort((a, b) => b[1] - a[1])
                     .slice(0, 10);
+                
+                chartDataLSNM = sorted.map(s => ({ name: s[0], value: s[1] }));
                 
                 if (sorted.length === 0) return;
                 
@@ -3311,6 +3312,14 @@
                                 top: 20,
                                 bottom: 20
                             }
+                        },
+                        onClick: function(e, activeElements) {
+                            if (activeElements && activeElements.length > 0) {
+                                const index = activeElements[0].index;
+                                if (chartDataLSNM[index]) {
+                                    setDetailFilter(chartDataLSNM[index].name, 'non_mesin');
+                                }
+                            }
                         }
                     },
                     plugins: [{
@@ -3355,15 +3364,13 @@
                 const msStats = {};
                 records.forEach(r => {
                     try {
-                        if (r.minor_stop_data) {
-                            const msData = typeof r.minor_stop_data === 'string' ? JSON.parse(r.minor_stop_data) : (r.minor_stop_data || []);
-                            msData.forEach(ms => {
-                                const frequency = parseFloat(ms.frequency || 0);
-                                if (ms.item) {
-                                    msStats[ms.item] = (msStats[ms.item] || 0) + frequency;
-                                }
-                            });
-                        }
+                        const msData = safeJSONParse(r.minor_stop_data, []);
+                        msData.forEach(ms => {
+                            const frequency = parseFloat(ms.frequency || 0);
+                            if (ms.item) {
+                                msStats[ms.item] = (msStats[ms.item] || 0) + frequency;
+                            }
+                        });
                     } catch (e) {
                         console.error('Error parsing minor stop data for chart:', e);
                     }
@@ -4940,7 +4947,7 @@
                 const rows = records.map(r => {
                     let totalODT = 0;
                     try {
-                        const odtData = typeof r.odt_data === 'string' ? JSON.parse(r.odt_data) : (r.odt_data || []);
+                        const odtData = safeJSONParse(r.odt_data, []);
                         odtData.forEach(odt => {
                             if (odt.checked) {
                                 const actualTime = parseFloat(odt.actualTime || 0);
@@ -4954,7 +4961,7 @@
                     
                     let totalLSM = 0;
                     try {
-                        const lsmData = typeof r.line_stop_mesin_data === 'string' ? JSON.parse(r.line_stop_mesin_data) : (r.line_stop_mesin_data || []);
+                        const lsmData = safeJSONParse(r.line_stop_mesin_data, []);
                         totalLSM = lsmData.reduce((sum, l) => sum + parseFloat(l.duration || 0), 0);
                     } catch (e) {
                         console.error('Error calculating LSM:', e);
@@ -4962,7 +4969,7 @@
                     
                     let totalLSNM = 0;
                     try {
-                        const lsnmData = typeof r.line_stop_non_mesin_data === 'string' ? JSON.parse(r.line_stop_non_mesin_data) : (r.line_stop_non_mesin_data || []);
+                        const lsnmData = safeJSONParse(r.line_stop_non_mesin_data, []);
                         totalLSNM = lsnmData.reduce((sum, l) => sum + parseFloat(l.duration || 0), 0);
                     } catch (e) {
                         console.error('Error calculating LSNM:', e);
@@ -5115,15 +5122,22 @@
                     
                     if (filters.detailLineStopType === 'mesin' && r.line_stop_mesin_data) {
                         try {
-                            const lsData = typeof r.line_stop_mesin_data === 'string' ? JSON.parse(r.line_stop_mesin_data) : r.line_stop_mesin_data;
+                            const lsData = safeJSONParse(r.line_stop_mesin_data, []);
                             match = lsData.some(ls => ls.item === filters.detailLineStopItem);
                         } catch (e) {}
                     }
                     
                     if (filters.detailLineStopType === 'non_mesin' && r.line_stop_non_mesin_data) {
                         try {
-                            const lsData = typeof r.line_stop_non_mesin_data === 'string' ? JSON.parse(r.line_stop_non_mesin_data) : r.line_stop_non_mesin_data;
+                            const lsData = safeJSONParse(r.line_stop_non_mesin_data, []);
                             match = lsData.some(ls => ls.item === filters.detailLineStopItem);
+                        } catch (e) {}
+                    }
+
+                    if (filters.detailLineStopType === 'minor_stop' && r.minor_stop_data) {
+                        try {
+                            const msData = safeJSONParse(r.minor_stop_data, []);
+                            match = msData.some(ms => ms.item === filters.detailLineStopItem);
                         } catch (e) {}
                     }
                     
