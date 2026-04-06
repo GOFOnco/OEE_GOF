@@ -1078,6 +1078,7 @@
             }
         }
 
+        // ==================== PERUBAHAN ADA DI SINI (RUMUS OEE 365) ====================
         function calculateOEE(formData) {
             const shiftMinutes = SHIFTS[formData.shift]?.minutes || 0;
             const targetPerMinute = formData.targetPerMinute || 0;
@@ -1169,6 +1170,7 @@
             }
             
             const oeeActual = (availabilityActual * performance * quality) / 10000;
+            // ========== PERUBAHAN: OEE 365 dihitung dari Availability365 x Performance x Quality ==========
             const oee365 = (availability365 * performance * quality) / 10000;
             
             return {
@@ -1683,6 +1685,7 @@
             }
         }
 
+        // ==================== PERUBAHAN JUGA ADA DI SINI (RENDER DASHBOARD - AVERAGE OEE 365) ====================
         function renderDashboard() {
             const filtered = getFilteredRecords();
             
@@ -1690,11 +1693,13 @@
             const avgA = filtered.length > 0 ? filtered.reduce((sum, r) => sum + (r.availability_actual || 0), 0) / filtered.length : 0;
             const avgP = filtered.length > 0 ? filtered.reduce((sum, r) => sum + (r.performance || 0), 0) / filtered.length : 0;
             const avgQ = filtered.length > 0 ? filtered.reduce((sum, r) => sum + (r.quality || 0), 0) / filtered.length : 0;
+            const avgA365 = filtered.length > 0 ? filtered.reduce((sum, r) => sum + (r.availability_365 || 0), 0) / filtered.length : 0;
             
-            // Hitung OEE Actual dari perkalian A x P x Q (sama seperti di chart)
+            // Hitung OEE Actual dari perkalian A x P x Q
             const calculatedOEEActual = (avgA * avgP * avgQ) / 10000;
+            // ========== PERUBAHAN: OEE 365 dari perkalian A365 x P x Q ==========
+            const calculatedOEE365 = (avgA365 * avgP * avgQ) / 10000;
             
-            const avgOEE365 = filtered.length > 0 ? filtered.reduce((sum, r) => sum + (r.oee_365 || 0), 0) / filtered.length : 0;
             const totalOutput = filtered.reduce((sum, r) => sum + (r.actual_output || 0), 0);
             
             const uniquePICs = [...new Set(filtered.map(r => r.pic).filter(Boolean))];
@@ -1778,10 +1783,11 @@
                                 <div class="scorecard-value">${calculatedOEEActual.toFixed(1)}%</div>
                                 <div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">Target: 88% (dari A×P×Q)</div>
                             </div>
-                            <div class="scorecard ${avgOEE365 >= 55 ? 'good' : 'bad'}">
+                            <!-- ========== PERUBAHAN: OEE 365 dari A365 × P × Q ========== -->
+                            <div class="scorecard ${calculatedOEE365 >= 55 ? 'good' : 'bad'}">
                                 <div class="scorecard-label">Average OEE 365</div>
-                                <div class="scorecard-value">${avgOEE365.toFixed(1)}%</div>
-                                <div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">Target: 55%</div>
+                                <div class="scorecard-value">${calculatedOEE365.toFixed(1)}%</div>
+                                <div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">Target: 55% (dari A365×P×Q)</div>
                             </div>
                         </div>
                         <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px;">
