@@ -1152,16 +1152,21 @@
                 : 0;
             
             let performance = 100;
-            if (targetPerMinute > 0) {
-                const availableTimeActual = shiftMinutes - totalODT - totalLineStopMesin - totalLineStopNonMesin;
-                const idealOutput = availableTimeActual * targetPerMinute;
-                if (idealOutput > 0) {
-                    performance = (formData.actualOutput / idealOutput) * 100;
-                } else {
-                    performance = 0;
-                }
-            }
-            
+if (targetPerMinute > 0) {
+    const availableTimeActual = shiftMinutes - totalODT - totalLineStopMesin - totalLineStopNonMesin;
+    const targetOutput = availableTimeActual * targetPerMinute;
+    
+    if (targetOutput > 0) {
+        // PERBAIKAN: Jika actual output melebihi target, performance = 100%
+        if (formData.actualOutput >= targetOutput) {
+            performance = 100;
+        } else {
+            performance = (formData.actualOutput / targetOutput) * 100;
+        }
+    } else {
+        performance = 0;
+    }
+}            
             let quality = 100;
             if (targetPerMinute > 0) {
                 quality = formData.actualOutput > 0 
